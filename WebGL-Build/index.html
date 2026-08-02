@@ -17,6 +17,38 @@
         window.addEventListener('keydown', onKey, true);
         window.addEventListener('keyup',   onKey, true);
       })();
+
+      // AUDIO-FIX: 브라우저 자동재생 정책 우회 — 첫 상호작용 시 AudioContext 해제
+      (function() {
+        function unlockAudio() {
+          if (window.unityInstance && window.unityInstance.Module && window.unityInstance.Module.ctx) {
+            window.unityInstance.Module.ctx.resume();
+          }
+          // Fallback: find any suspended AudioContext
+          if (window.AudioContext || window.webkitAudioContext) {
+            var AC = window.AudioContext || window.webkitAudioContext;
+            // Unity creates its own context; just trigger any pending resume
+            document.dispatchEvent(new Event('click'));
+          }
+        }
+        ['click','keydown','touchstart'].forEach(function(evt) {
+          document.addEventListener(evt, unlockAudio, { once: true, capture: true });
+        });
+      })();
+
+      // BROWSER-CHECK: wasm-exceptions 미지원 브라우저 경고
+      (function() {
+        try {
+          if (!WebAssembly || !WebAssembly.validate) throw new Error();
+          // wasm-exceptions 간단 체크
+          var hasExceptions = WebAssembly.validate(new Uint8Array([
+            0,97,115,109,1,0,0,0,1,4,1,96,0,0,3,2,1,0,10,8,1,6,0,6,64,1,25,1,11
+          ]));
+          if (!hasExceptions) {
+            alert('이 브라우저는 게임 실행에 필요한 기능(WebAssembly Exceptions)을 지원하지 않습니다.\nChrome 95 이상 또는 Edge 95 이상으로 업데이트해 주세요.');
+          }
+        } catch(e) {}
+      })();
     </script>
     </head>
   <body>
