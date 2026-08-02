@@ -600,7 +600,7 @@ namespace Persuasion.UI
         private static float SpeedFor(string text)
         {
             int len = string.IsNullOrEmpty(text) ? 1 : text.Length;
-            return Mathf.Clamp(2.0f / len, 0.04f, 0.06f);
+            return Mathf.Clamp(1.2f / len, 0.008f, 0.03f);
         }
 
         private ChatBubble SpawnBubble(GameObject prefab, string text, bool typed)
@@ -1360,6 +1360,8 @@ namespace Persuasion.UI
             if (panel == null) return;
             var audio = AudioManager.Instance;
             if (audio != null) audio.StopCharacterVoice();
+
+            if (panel != playPanel) _korBridge?.HideOverlay();
 
             introPanel.SetActive(panel == introPanel);
             if (stageSelectPanel != null) stageSelectPanel.SetActive(panel == stageSelectPanel);
