@@ -1,0 +1,16 @@
+WebGL-Build/Build/WebGL-Build.data.br
+WebGL-Build/Build/WebGL-Build.data
+WebGL-Build/Build/WebGL-Build.wasm
+Assets/
+Builds/
+Library/
+Temp/
+Logs/
+ProjectSettings/
+Packages/
+Data/
+netlify/
+*.csproj
+*.sln
+mono_crash.*
+DEPLOY.md

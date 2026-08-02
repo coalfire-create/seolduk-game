@@ -1,7 +1,5 @@
 {
   "framework": null,
-  "buildCommand": "git lfs pull",
-  "installCommand": "",
   "outputDirectory": "WebGL-Build",
   "functions": {
     "api/chat.mjs":        { "maxDuration": 30 },
