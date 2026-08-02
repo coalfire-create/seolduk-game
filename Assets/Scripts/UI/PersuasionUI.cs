@@ -490,7 +490,8 @@ namespace Persuasion.UI
             if (bubble != null)
             {
                 var audio = AudioManager.Instance;
-                if (audio != null) audio.PlayCharacterVoice(manager.CurrentStageIndex);
+                if (audio != null && playPanel != null && playPanel.activeSelf)
+                    audio.PlayCharacterVoice(manager.CurrentStageIndex);
                 bubble.SetTextTyped(displayDialogue, SpeedFor(response.dialogue), PinScrollToBottom,
                     () => { if (audio != null) audio.StopCharacterVoice(); });
             }
@@ -738,6 +739,8 @@ namespace Persuasion.UI
 
         private void GoToHome()
         {
+            var audio = AudioManager.Instance;
+            if (audio != null) audio.StopCharacterVoice();
             CloseMenu();
             if (manager != null) manager.GoToIntro();
         }
@@ -972,6 +975,9 @@ namespace Persuasion.UI
             }
 
             if (stageIntroOverlay != null) stageIntroOverlay.SetActive(false);
+
+            // 플레이 화면에서 이탈했으면 코루틴 종료 (음성 루프 방지)
+            if (playPanel == null || !playPanel.activeSelf) yield break;
 
             // 상대(용의자)가 먼저 상황을 열며 첫 대사를 건넨다 → 이후 플레이어가 대응
             ShowNpcOpeningLine();
