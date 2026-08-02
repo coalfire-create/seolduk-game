@@ -8,14 +8,28 @@
     <link rel="stylesheet" href="TemplateData/style.css">
   <!-- KEYBOARD-FIX -->
     <script>
-      // Unity WebGL: 브라우저가 Space·Backspace를 가로채는 것 방지
       (function() {
         var BLOCK = ['Space','Backspace','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'];
         function onKey(e) {
+          if (document.activeElement && document.activeElement.id === 'kor-ime') {
+            return;
+          }
           if (BLOCK.indexOf(e.code) !== -1) e.preventDefault();
         }
         window.addEventListener('keydown', onKey, true);
         window.addEventListener('keyup',   onKey, true);
+      })();
+
+      // AUDIO-FIX
+      (function() {
+        function unlockAudio() {
+          if (window.unityInstance && window.unityInstance.Module && window.unityInstance.Module.ctx) {
+            window.unityInstance.Module.ctx.resume();
+          }
+        }
+        ['click','keydown','touchstart'].forEach(function(evt) {
+          document.addEventListener(evt, unlockAudio, { once: true, capture: true });
+        });
       })();
     </script>
     </head>
@@ -67,13 +81,13 @@
       var loaderUrl = buildUrl + "/WebGL-Build.loader.js";
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/WebGL-Build.data.br",
+        dataUrl: "/api/gamedata?v=4",
         frameworkUrl: buildUrl + "/WebGL-Build.framework.js.br",
         codeUrl: buildUrl + "/WebGL-Build.wasm.br",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "DefaultCompany",
         productName: "My project",
-        productVersion: "0.1.0",
+        productVersion: "0.3.0",
         showBanner: unityShowBanner,
         // errorHandler: function(err, url, line) {
         //    alert("error " + err + " occurred at line " + line);
@@ -128,6 +142,7 @@
         createUnityInstance(canvas, config, (progress) => {
           document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
               }).then((unityInstance) => {
+                window.unityInstance = unityInstance;
                 document.querySelector("#unity-loading-bar").style.display = "none";
                 document.querySelector("#unity-fullscreen-button").onclick = () => {
                   unityInstance.SetFullscreen(1);
