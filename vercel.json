@@ -3,7 +3,8 @@
   "outputDirectory": "WebGL-Build",
   "functions": {
     "api/chat.mjs":        { "maxDuration": 30 },
-    "api/leaderboard.mjs": { "maxDuration": 10 }
+    "api/leaderboard.mjs": { "maxDuration": 10 },
+    "api/gamedata.mjs":    { "maxDuration": 300 }
   },
   "headers": [
     {
