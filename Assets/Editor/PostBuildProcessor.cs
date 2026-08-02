@@ -110,9 +110,8 @@ $@"<!-- GA4 -->
       (function() {
         var BLOCK = ['Space','Backspace','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'];
         function onKey(e) {
-          if (document.activeElement && document.activeElement.id === 'kor-ime') {
-            return;
-          }
+          var wrap = document.getElementById('kor-ime-wrap');
+          if (wrap && wrap.style.display !== 'none') return;
           if (BLOCK.indexOf(e.code) !== -1) e.preventDefault();
         }
         window.addEventListener('keydown', onKey, true);
