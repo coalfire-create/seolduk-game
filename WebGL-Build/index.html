@@ -14,8 +14,7 @@
         var BLOCK = ['Space','Backspace','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'];
         function onKey(e) {
           if (document.activeElement && document.activeElement.id === 'kor-ime') {
-            e.stopPropagation(); // IME 입력 중 Unity에 키 전달 차단
-            return;
+            return; // IME 텍스트영역이 활성화 — 이벤트를 그대로 통과시킴
           }
           if (BLOCK.indexOf(e.code) !== -1) e.preventDefault();
         }
