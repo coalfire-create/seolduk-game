@@ -29,7 +29,7 @@ namespace Persuasion.EditorTools
 
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Brotli;
             PlayerSettings.WebGL.dataCaching = true;
-            PlayerSettings.WebGL.emscriptenArgs = "-s ALLOW_MEMORY_GROWTH=1";
+            PlayerSettings.WebGL.emscriptenArgs = "-s ALLOW_MEMORY_GROWTH=1 -s INITIAL_MEMORY=536870912";
 
             var options = new BuildPlayerOptions
             {

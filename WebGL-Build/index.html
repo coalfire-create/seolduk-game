@@ -6,18 +6,19 @@
     <title>Unity Web Player | My project</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
-<!-- KEYBOARD-FIX -->
-<script>
-  (function() {
-    var BLOCK = ['Space','Backspace','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'];
-    function onKey(e) {
-      if (BLOCK.indexOf(e.code) !== -1) e.preventDefault();
-    }
-    window.addEventListener('keydown', onKey, true);
-    window.addEventListener('keyup',   onKey, true);
-  })();
-</script>
-  </head>
+  <!-- KEYBOARD-FIX -->
+    <script>
+      // Unity WebGL: 브라우저가 Space·Backspace를 가로채는 것 방지
+      (function() {
+        var BLOCK = ['Space','Backspace','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'];
+        function onKey(e) {
+          if (BLOCK.indexOf(e.code) !== -1) e.preventDefault();
+        }
+        window.addEventListener('keydown', onKey, true);
+        window.addEventListener('keyup',   onKey, true);
+      })();
+    </script>
+    </head>
   <body>
     <div id="unity-container" class="unity-desktop">
       <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
@@ -66,7 +67,7 @@
       var loaderUrl = buildUrl + "/WebGL-Build.loader.js";
       var config = {
         arguments: [],
-        dataUrl: "/api/gamedata?v=2",
+        dataUrl: buildUrl + "/WebGL-Build.data.br",
         frameworkUrl: buildUrl + "/WebGL-Build.framework.js.br",
         codeUrl: buildUrl + "/WebGL-Build.wasm.br",
         streamingAssetsUrl: "StreamingAssets",
