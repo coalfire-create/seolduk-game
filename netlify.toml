@@ -1,0 +1,22 @@
+# 설득의 기술 — Netlify 배포 설정
+# 배포 루트는 이 파일이 있는 "My project" 폴더입니다.
+#   publish   : Unity WebGL 빌드 산출물 (매 빌드 시 재생성됨)
+#   functions : OpenAI 프록시 (API 키를 서버에만 보관)
+
+[build]
+  publish   = "WebGL-Build"
+  functions = "netlify/functions"
+
+# 게임 클라이언트가 호출하는 /api/chat 을 프록시 함수로 연결
+[[redirects]]
+  from   = "/api/chat"
+  to     = "/.netlify/functions/chat"
+  status = 200
+
+# 글로벌 리더보드
+[[redirects]]
+  from   = "/api/leaderboard"
+  to     = "/.netlify/functions/leaderboard"
+  status = 200
+
+# 참고: Brotli(Content-Encoding: br) 헤더는 WebGL-Build/_headers 에서 처리됩니다.

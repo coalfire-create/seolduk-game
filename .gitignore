@@ -1,0 +1,16 @@
+# Unity 생성 파일
+Temp/
+Library/
+Logs/
+obj/
+UserSettings/
+*.csproj
+*.sln
+*.suo
+*.user
+
+# 로컬 개발 전용
+apikey.local.txt
+
+# OS
+.DS_Store
