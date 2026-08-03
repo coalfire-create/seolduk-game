@@ -198,6 +198,31 @@ namespace Persuasion.UI
             {
                 volumeSlider.value = AudioListener.volume;
                 volumeSlider.onValueChanged.AddListener(v => AudioListener.volume = v);
+                EnhanceSliderVisibility(volumeSlider);
+            }
+        }
+
+        /// <summary>메뉴의 볼륨 슬라이더가 잘 안 보이는 문제 대응: 배경/채움/핸들 색을 대비 높게 재설정.</summary>
+        private static void EnhanceSliderVisibility(Slider slider)
+        {
+            if (slider == null) return;
+
+            // 배경(트랙): 어두운 반투명
+            var bg = slider.transform.Find("Background")?.GetComponent<Image>();
+            if (bg != null) bg.color = new Color(0.10f, 0.11f, 0.16f, 0.95f);
+
+            // 채움: 밝은 앰버 (설득도 UI 톤과 통일)
+            if (slider.fillRect != null)
+            {
+                var fill = slider.fillRect.GetComponent<Image>();
+                if (fill != null) fill.color = new Color(1.0f, 0.82f, 0.35f, 1f);
+            }
+
+            // 핸들: 밝은 흰색으로 명확히
+            if (slider.handleRect != null)
+            {
+                var handle = slider.handleRect.GetComponent<Image>();
+                if (handle != null) handle.color = new Color(1f, 1f, 1f, 1f);
             }
         }
 
@@ -999,26 +1024,54 @@ namespace Persuasion.UI
             _currentStoryPages.Clear();
             _currentStoryPageIndex = 0;
 
-            // 1) 스테이지 전환 내레이션이 존재하면 스토리 1페이지로 등록
-            if (manager.CurrentBeatKind == StoryBeatKind.StageTransition && !string.IsNullOrEmpty(manager.PendingTransitionNarration))
+            // 전환컷(StageTransition): 직전 스테이지의 전환 내레이션만 표시.
+            // 배경 내레이션은 이어지는 도입컷(StageIntro)에서 표시하므로 여기서 중복 추가하지 않는다.
+            if (manager.CurrentBeatKind == StoryBeatKind.StageTransition)
             {
-                _currentStoryPages.Add(manager.PendingTransitionNarration.Trim());
-            }
-
-            // 2) 스테이지 배경 내레이션 추가 (문단/구분선 분치 시 다중 페이지 지원)
-            if (!string.IsNullOrEmpty(stage.backgroundNarration))
-            {
-                string[] parts = stage.backgroundNarration.Split(new[] { "\n\n", "\r\n\r\n" }, System.StringSplitOptions.RemoveEmptyEntries);
-                foreach (var p in parts)
+                // 전환컷이 2장(예: 살해 장면 추가)인 경우, 내레이션을 줄바꿈 기준으로 나눠 컷마다 한 페이지씩.
+                int cutCount = (transitionArtLibrary != null)
+                    ? transitionArtLibrary.GetTransitionPageCount(manager.PendingTransitionFromStageId, stage.stageId)
+                    : 1;
+                string narration = manager.PendingTransitionNarration;
+                if (cutCount >= 2 && !string.IsNullOrEmpty(narration))
                 {
-                    if (!string.IsNullOrWhiteSpace(p))
-                        _currentStoryPages.Add(p.Trim());
+                    string[] sentences = narration.Split(new[] { "\n", "\r\n" }, System.StringSplitOptions.RemoveEmptyEntries);
+                    if (sentences.Length >= 2)
+                    {
+                        // 앞 문장 → 1번째 컷, 나머지 → 2번째 컷
+                        _currentStoryPages.Add(sentences[0].Trim());
+                        _currentStoryPages.Add(string.Join("\n", sentences, 1, sentences.Length - 1).Trim());
+                    }
+                    else
+                    {
+                        _currentStoryPages.Add(narration.Trim());
+                        _currentStoryPages.Add(narration.Trim());
+                    }
+                }
+                else if (!string.IsNullOrEmpty(narration))
+                {
+                    _currentStoryPages.Add(narration.Trim());
+                }
+            }
+            else
+            {
+                // 도입컷(StageIntro): 스테이지 배경 내레이션(문단 단위 다중 페이지) 표시.
+                if (!string.IsNullOrEmpty(stage.backgroundNarration))
+                {
+                    string[] parts = stage.backgroundNarration.Split(new[] { "\n\n", "\r\n\r\n" }, System.StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var p in parts)
+                    {
+                        if (!string.IsNullOrWhiteSpace(p))
+                            _currentStoryPages.Add(p.Trim());
+                    }
                 }
             }
 
-            if (_currentStoryPages.Count == 0 && !string.IsNullOrEmpty(stage.backgroundNarration))
+            // 표시할 페이지가 하나도 없으면(전환/배경 내레이션 모두 비어있음) 다음 단계로 즉시 진행.
+            if (_currentStoryPages.Count == 0)
             {
-                _currentStoryPages.Add(stage.backgroundNarration);
+                manager.ContinueFromStoryBeat();
+                return;
             }
 
             DisplayStoryPage(0);
@@ -1033,16 +1086,26 @@ namespace Persuasion.UI
             Sprite sprite = null;
             if (transitionArtLibrary != null && stage != null)
             {
-                if (manager.CurrentBeatKind == StoryBeatKind.StageTransition && _currentStoryPageIndex == 0)
-                    sprite = transitionArtLibrary.GetTransition(manager.PendingTransitionFromStageId, stage.stageId);
+                bool isTransitionPage = manager.CurrentBeatKind == StoryBeatKind.StageTransition;
+                if (isTransitionPage)
+                    sprite = transitionArtLibrary.GetTransition(manager.PendingTransitionFromStageId, stage.stageId, _currentStoryPageIndex);
                 else
                     sprite = transitionArtLibrary.GetIntro(stage.stageId);
+
+                // 도입 일러스트가 없는 스테이지(예: 연쇄살인마)는 캐릭터 초상화로 폴백.
+                if (sprite == null && !isTransitionPage && portraitLibrary != null)
+                {
+                    var set = portraitLibrary.Find(stage.stageId);
+                    if (set != null) sprite = set.baseSprite;
+                }
             }
 
             if (storyBeatImage != null)
             {
                 storyBeatImage.sprite = sprite;
                 storyBeatImage.enabled = (sprite != null);
+                // 밝은 일러스트 위에서도 흰 글자가 보이도록 이미지를 어둡게 틴트.
+                storyBeatImage.color = new Color(0.62f, 0.62f, 0.64f, 1f);
                 if (sprite != null)
                 {
                     var fitter = storyBeatImage.GetComponent<AspectRatioFitter>();
@@ -1063,6 +1126,11 @@ namespace Persuasion.UI
             if (manager.IsPeeking)
             {
                 SetStoryContinueLabel(isLastPage ? "닫기" : "다음 컷 ▶");
+            }
+            else if (manager.CurrentBeatKind == StoryBeatKind.StageTransition)
+            {
+                // 전환컷 다음엔 새 스테이지 도입컷이 이어지므로 마지막 페이지도 "다음 컷".
+                SetStoryContinueLabel("다음 컷 ▶");
             }
             else
             {

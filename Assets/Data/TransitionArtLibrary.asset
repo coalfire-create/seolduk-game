@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7eb9d96b5ff9e47db8112f4326dcfb50, type: 3}
+  m_Name: TransitionArtLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::Persuasion.TransitionArtLibrary
+  titleScreen: {fileID: 21300000, guid: 23f987934978042bfb0aad960cbab790, type: 3}
+  intros:
+  - stageId: stage_ai_core
+    sprite: {fileID: 21300000, guid: 90125bade30014c3482d5cbd4af4534a, type: 3}
+  - stageId: stage_ai_creator
+    sprite: {fileID: 21300000, guid: 0dcc2b4cbc8b54203b59171cc8803cec, type: 3}
+  - stageId: stage_ai_terminal
+    sprite: {fileID: 21300000, guid: 806cbec73901141168f811850bfec7f4, type: 3}
+  - stageId: stage_hitandrun
+    sprite: {fileID: 21300000, guid: ba941964a49f04752b506b232aa644b9, type: 3}
+  - stageId: stage_premeditated
+    sprite: {fileID: 21300000, guid: caef82adbbbd046d5b887c7650b30f77, type: 3}
+  - stageId: stage_spy_boss
+    sprite: {fileID: 21300000, guid: f81a88e4d516f498c9c9c7ce0821e3af, type: 3}
+  - stageId: stage_spy_janitor
+    sprite: {fileID: 21300000, guid: e556aa868db9f41b58c0bfbffb7ce0bb, type: 3}
+  - stageId: stage_spy_president
+    sprite: {fileID: 21300000, guid: eb7c134a370094515bdd4f8e6a0b1186, type: 3}
+  transitions:
+  - fromStageId: stage_ai_creator
+    toStageId: stage_ai_core
+    sprite: {fileID: 21300000, guid: 3210ba20b286f4edca95df72a65b7142, type: 3}
+  - fromStageId: stage_ai_terminal
+    toStageId: stage_ai_creator
+    sprite: {fileID: 21300000, guid: e6c433cfa165849e2a1f1e12b2b41df5, type: 3}
+  - fromStageId: stage_hitandrun
+    toStageId: stage_premeditated
+    sprite: {fileID: 21300000, guid: 48e955d3bd96640efb06918f6b565fee, type: 3}
+  - fromStageId: stage_premeditated
+    toStageId: stage_serialkiller
+    sprite: {fileID: 21300000, guid: c512b38ca628e4fff9423e6fd10f8a34, type: 3}
+  - fromStageId: stage_spy_boss
+    toStageId: stage_spy_janitor
+    sprite: {fileID: 21300000, guid: e74991b917b634aeb970fe26bd23295a, type: 3}
+  - fromStageId: stage_spy_janitor
+    toStageId: stage_spy_president
+    sprite: {fileID: 21300000, guid: 00b78851ac51f4992b536d4bf0589d73, type: 3}
+    spriteExtra: {fileID: 21300000, guid: c19f8f259b1da4d6c93b9bd8b6fceaad, type: 3}

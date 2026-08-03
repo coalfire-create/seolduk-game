@@ -110,32 +110,10 @@ $@"<!-- GA4 -->
       (function() {
         var BLOCK = ['Space','Backspace','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'];
         function onKey(e) {
+          var el = document.activeElement;
+          if (el && (el.id === 'kor-ime' || el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')) return;
           var wrap = document.getElementById('kor-ime-wrap');
-          if (wrap && wrap.style.display !== 'none') {
-            if (e.type === 'keydown') {
-              var ta = document.getElementById('kor-ime');
-              if (ta) {
-                var s = ta.selectionStart, en = ta.selectionEnd;
-                if (e.code === 'Backspace') {
-                  e.preventDefault(); e.stopImmediatePropagation();
-                  if (s !== en) { ta.setRangeText('', s, en, 'end'); ta.dispatchEvent(new CompositionEvent('compositionend',{bubbles:true})); }
-                  else if (s > 0) { ta.setRangeText('', s-1, s, 'end'); }
-                  ta.dispatchEvent(new Event('input', {bubbles:true}));
-                  return;
-                }
-                if (e.code === 'Space') {
-                  e.preventDefault(); e.stopImmediatePropagation();
-                  var ins = (s !== en) ? ta.value.slice(s, en) + ' ' : ' ';
-                  ta.setRangeText(ins, s, en, 'end');
-                  if (s !== en) ta.dispatchEvent(new CompositionEvent('compositionend',{bubbles:true}));
-                  ta.dispatchEvent(new Event('input', {bubbles:true}));
-                  return;
-                }
-                if (document.activeElement !== ta) ta.focus();
-              }
-            }
-            return;
-          }
+          if (wrap && wrap.style.display !== 'none') return;
           if (BLOCK.indexOf(e.code) !== -1) e.preventDefault();
         }
         window.addEventListener('keydown', onKey, true);
