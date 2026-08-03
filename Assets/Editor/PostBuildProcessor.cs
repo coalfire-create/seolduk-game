@@ -122,13 +122,13 @@ $@"<!-- GA4 -->
 
       // AUDIO-FIX
       (function() {
+        function resumeCtx(ctx) { try { if (ctx && ctx.state === 'suspended') ctx.resume(); } catch (e) {} }
         function unlockAudio() {
-          if (window.unityInstance && window.unityInstance.Module && window.unityInstance.Module.ctx) {
-            window.unityInstance.Module.ctx.resume();
-          }
+          var ui = window.unityInstance, m = ui && ui.Module;
+          if (m) { resumeCtx(m.ctx); if (m.WEBAudio) resumeCtx(m.WEBAudio.audioContext); }
         }
-        ['click','keydown','touchstart'].forEach(function(evt) {
-          document.addEventListener(evt, unlockAudio, { once: true, capture: true });
+        ['pointerdown','click','keydown','touchstart'].forEach(function(evt) {
+          document.addEventListener(evt, unlockAudio, true);
         });
       })();
     </script>
