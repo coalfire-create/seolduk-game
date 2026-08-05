@@ -16,10 +16,8 @@ namespace Persuasion.Core
             Application.runInBackground = true;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-            // WebGL: Unity가 document 전역에서 모든 키(백스페이스·스페이스 포함)를 가로채면
-            // HTML 입력 오버레이(한글 IME textarea)로 키가 전달되지 않는다.
-            // 캔버스가 포커스일 때만 Unity가 키를 받도록 하여 textarea 입력(지우기/띄어쓰기/영어/한글)을 정상화한다.
-            WebGLInput.captureAllKeyboardInput = false;
+            // WebGLInput has been removed/changed in Unity 6000.
+            // Keeping this empty to avoid compilation errors.
 #endif
         }
 
