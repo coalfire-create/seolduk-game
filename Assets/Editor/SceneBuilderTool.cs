@@ -160,6 +160,38 @@ namespace Persuasion.EditorTools
             introFitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
             introFitter.aspectRatio = 16f / 9f;
 
+            // ── 오프닝 배경 슬라이드쇼 (3장 크로스페이드 + 은은한 줌) ──
+            var introBgBGO = new GameObject("IntroBackgroundImageB", typeof(RectTransform), typeof(Image), typeof(AspectRatioFitter));
+            introBgBGO.transform.SetParent(introPanel.transform, false);
+            introBgBGO.transform.SetSiblingIndex(1);   // A(0) 위, 그라데이션 아래
+            Full(introBgBGO.GetComponent<RectTransform>());
+            var introBgImgB = introBgBGO.GetComponent<Image>();
+            introBgImgB.raycastTarget = false;
+            introBgImgB.preserveAspect = false;
+            introBgImgB.color = new Color(1f, 1f, 1f, 0f);
+            var introFitterB = introBgBGO.GetComponent<AspectRatioFitter>();
+            introFitterB.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+            introFitterB.aspectRatio = 16f / 9f;
+
+            var openSlides = new System.Collections.Generic.List<Sprite>();
+            foreach (var sp in new[] {
+                LoadAsSprite("Assets/Art/Transitions/opening_slide1.png"),
+                LoadAsSprite("Assets/Art/Transitions/opening_slide2.png"),
+                LoadAsSprite("Assets/Art/Transitions/opening_slide3.png") })
+                if (sp != null) openSlides.Add(sp);
+
+            if (openSlides.Count > 0)
+            {
+                introBgImg.sprite  = openSlides[0];
+                introBgImg.color   = Color.white;
+                introBgImg.enabled = true;
+                var slideshow = introPanel.AddComponent<IntroSlideshow>();
+                Wire(slideshow, "layerA", introBgImg);
+                Wire(slideshow, "layerB", introBgImgB);
+                WireArray(slideshow, "slides", openSlides.ToArray());
+            }
+            else Debug.LogWarning("[Persuasion] opening_slide 이미지를 찾지 못함 — 슬라이드쇼 생략");
+
             var introTopGradGO = new GameObject("TopGradient", typeof(RectTransform));
             introTopGradGO.transform.SetParent(introPanel.transform, false);
             var introTopGradRt = introTopGradGO.GetComponent<RectTransform>();
@@ -187,36 +219,74 @@ namespace Persuasion.EditorTools
             botGrad.raycastTarget = false;
 
             var topHeaderGO = new GameObject("TopHeaderBar", typeof(RectTransform));
-            var introMenuBtn = MkBarButton("IntroMenuButton", introPanel.transform, "메뉴", 130f, new Color(0, 0, 0, 0.6f));
-            var introMenuBtnRt = introMenuBtn.GetComponent<RectTransform>();
-            AnchorTopRight(introMenuBtnRt, new Vector2(-SAFE, -SAFE), new Vector2(130f, 42f));
+            // 게임 시작 아래 '설정 | 종료' 나란히 (레퍼런스 배치)
+            var introMenuBtn = MkButton("IntroMenuButton", introPanel.transform, "설정", out var introMenuLbl);
+            AnchorBox(introMenuBtn.GetComponent<RectTransform>(), new Vector2(0.42f, 0.18f), new Vector2(180f, 60f));
+            introMenuBtn.GetComponent<Image>().color = new Color(0.05f, 0.05f, 0.05f, 0.75f);
+            if (introMenuBtn.transform.Find("Border") != null) {
+                var bdr = introMenuBtn.transform.Find("Border").GetComponent<Image>();
+                bdr.color = new Color(0.6f, 0.6f, 0.6f, 0.8f);
+                var bdrRt = bdr.GetComponent<RectTransform>();
+                bdrRt.offsetMin = new Vector2(-2, -2); bdrRt.offsetMax = new Vector2(2, 2);
+            }
+            introMenuLbl.fontSize = 26; introMenuLbl.color = new Color(0.8f, 0.8f, 0.8f, 1f);
+
+            var introQuitBtn = MkButton("IntroQuitButton", introPanel.transform, "종료", out var introQuitLbl);
+            AnchorBox(introQuitBtn.GetComponent<RectTransform>(), new Vector2(0.58f, 0.18f), new Vector2(180f, 60f));
+            introQuitBtn.GetComponent<Image>().color = new Color(0.05f, 0.05f, 0.05f, 0.75f);
+            if (introQuitBtn.transform.Find("Border") != null) {
+                var bdr = introQuitBtn.transform.Find("Border").GetComponent<Image>();
+                bdr.color = new Color(0.6f, 0.6f, 0.6f, 0.8f);
+                var bdrRt = bdr.GetComponent<RectTransform>();
+                bdrRt.offsetMin = new Vector2(-2, -2); bdrRt.offsetMax = new Vector2(2, 2);
+            }
+            introQuitLbl.fontSize = 26; introQuitLbl.color = new Color(0.8f, 0.8f, 0.8f, 1f);
 
             var titleGroupGO = new GameObject("TitleGroup", typeof(RectTransform), typeof(CanvasGroup));
             titleGroupGO.transform.SetParent(introPanel.transform, false);
             AnchorBox(titleGroupGO.GetComponent<RectTransform>(), new Vector2(0.5f, 0.75f), new Vector2(1600, 180));
             var introTitleGroup = titleGroupGO.GetComponent<CanvasGroup>();
 
-            var titleShadow = MkText("TitleShadow", titleGroupGO.transform, 110, TextAlignmentOptions.Center, new Color(0, 0, 0, 0.8f));
-            AnchorBox(titleShadow.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(1500, 150));
-            titleShadow.rectTransform.anchoredPosition = new Vector2(4, -8);
+            var titleShadow = MkText("TitleShadow", titleGroupGO.transform, 120, TextAlignmentOptions.Center, new Color(0, 0, 0, 0.85f));
+            AnchorBox(titleShadow.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(1500, 160));
+            titleShadow.rectTransform.anchoredPosition = new Vector2(4, -7);
             titleShadow.fontStyle = FontStyles.Bold;
-            titleShadow.characterSpacing = 30f;
+            titleShadow.characterSpacing = 6f;
             titleShadow.text = gameData.gameTitle;
 
-            var titleText = MkText("Title", titleGroupGO.transform, 110, TextAlignmentOptions.Center, new Color(0.96f, 0.96f, 0.98f, 1f));
-            AnchorBox(titleText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(1500, 150));
+            var titleText = MkText("Title", titleGroupGO.transform, 150, TextAlignmentOptions.Center, Color.white);
+            AnchorBox(titleText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(1500, 160));
             titleText.fontStyle = FontStyles.Bold;
-            titleText.characterSpacing = 30f;
+            titleText.characterSpacing = 2f;
             titleText.text = gameData.gameTitle;
 
-            var startBtn = MkButton("StartButton", introPanel.transform, "화면을 클릭하여 시작하세요", out var startBtnText);
-            AnchorBox(startBtn.GetComponent<RectTransform>(), new Vector2(0.5f, 0.35f), new Vector2(560, 80));
-            // Make button background transparent for a clean text-only look
-            startBtn.GetComponent<Image>().color = new Color(0, 0, 0, 0f); 
-            startBtnText.fontSize = 28;
+            // 타이틀 아래 붉은색 포인트 라인 (레퍼런스 느낌)
+            var titleLine = MkPanel("TitleLine", titleGroupGO.transform, new Color(0.85f, 0.12f, 0.14f, 0.95f), false);
+            AnchorBox(titleLine.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(500, 5));
+            titleLine.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -68);
+
+            var subtitle = MkText("Subtitle", titleGroupGO.transform, 38, TextAlignmentOptions.Center, Color.white);
+            AnchorBox(subtitle.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(1200, 50));
+            subtitle.rectTransform.anchoredPosition = new Vector2(0, -115);
+            subtitle.fontStyle = FontStyles.Bold;
+            subtitle.characterSpacing = 4f;
+            subtitle.text = "진실을 밝혀내는 심리전";
+
+            var startBtn = MkButton("StartButton", introPanel.transform, "게임 시작", out var startBtnText);
+            AnchorBox(startBtn.GetComponent<RectTransform>(), new Vector2(0.5f, 0.32f), new Vector2(430, 92));
+            startBtn.GetComponent<Image>().color = new Color(0.05f, 0.05f, 0.05f, 0.75f);
+            var startBorder = startBtn.transform.Find("Border");
+            if (startBorder != null)
+            {
+                var sbImg = startBorder.GetComponent<Image>();
+                sbImg.color = new Color(0.95f, 0.35f, 0.15f, 1f);   // 레드오렌지 아웃라인
+                var sbRt = startBorder.GetComponent<RectTransform>();
+                sbRt.offsetMin = new Vector2(-3f, -3f); sbRt.offsetMax = new Vector2(3f, 3f);
+            }
+            startBtnText.fontSize = 42;
             startBtnText.fontStyle = FontStyles.Bold;
-            startBtnText.characterSpacing = 8f;
-            startBtnText.color = new Color(1f, 1f, 1f, 0.8f);
+            startBtnText.characterSpacing = 4f;
+            startBtnText.color = new Color(0.95f, 0.35f, 0.15f, 1f);
 
 
 
@@ -453,12 +523,15 @@ namespace Persuasion.EditorTools
             var introGoalCard = MkPanel("IntroGoalCard", stageIntroOverlay.transform, new Color(0.16f, 0.13f, 0.06f, 0.96f), false);
             var introGoalRt = introGoalCard.GetComponent<RectTransform>();
             AnchorBox(introGoalRt, new Vector2(0.5f, 0.40f), new Vector2(740f, 80f));
+            Round(introGoalCard.GetComponent<Image>());
+            AddShadow(introGoalCard, 22f, 0.45f, -6f);
 
             var introGoalBorder = MkPanel("Border", introGoalCard.transform, ACCENT, false);
             var igbRt = introGoalBorder.GetComponent<RectTransform>();
             Full(igbRt);
             igbRt.offsetMin = new Vector2(-2, -2); igbRt.offsetMax = new Vector2(2, 2);
             igbRt.SetAsFirstSibling();
+            Round(introGoalBorder.GetComponent<Image>());
 
             var introGoalText = MkText("IntroGoalText", introGoalCard.transform, 26, TextAlignmentOptions.Center, TXT_GOLD);
             Full(introGoalText.rectTransform);
@@ -586,7 +659,7 @@ namespace Persuasion.EditorTools
             AnchorTopLeft(storyHeader.rectTransform, new Vector2(0, 0), new Vector2(1000, 28));
             storyHeader.fontStyle = FontStyles.Bold;
             storyHeader.characterSpacing = 2f;
-            storyHeader.text = "■  [ 📖 사건 개요 | CASE NARRATIVE ]  ■";
+            storyHeader.text = "■  [ 사건 개요 | CASE NARRATIVE ]  ■";
 
             // 배경과 완전히 하나로 어우러지는 24pt 프리미엄 시네마틱 자막 (3.5px 딥 블랙 섀도우)
             var storyBeatText = MkText("StoryBeatText", storyTextBackGO.transform, 24, TextAlignmentOptions.Center, new Color(0.99f, 0.99f, 0.98f, 1.0f));
@@ -696,37 +769,33 @@ namespace Persuasion.EditorTools
 
             var menuCard = new GameObject("Card", typeof(RectTransform), typeof(Image));
             menuCard.transform.SetParent(menuPanel.transform, false);
-            AnchorBox(menuCard.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(640, 540));
-            menuCard.GetComponent<Image>().color = BG_CARD;
+            AnchorBox(menuCard.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(680, 660));
+            var menuCardImg = menuCard.GetComponent<Image>();
+            menuCardImg.color = BG_CARD; Round(menuCardImg); AddShadow(menuCard, 28f, 0.5f, -8f);
 
             var menuTitle = MkText("MenuTitle", menuCard.transform, TYPE_HEADING, TextAlignmentOptions.Center, TXT_PRIMARY);
-            menuTitle.fontStyle = FontStyles.Bold; menuTitle.text = "메뉴";
-            AnchorBox(menuTitle.rectTransform, new Vector2(0.5f, 0.88f), new Vector2(560, 60));
+            menuTitle.fontStyle = FontStyles.Bold; menuTitle.text = "설정";
+            AnchorBox(menuTitle.rectTransform, new Vector2(0.5f, 0.925f), new Vector2(560, 60));
 
-            var volLabel = MkText("VolumeLabel", menuCard.transform, TYPE_SMALL, TextAlignmentOptions.Left, TXT_SECONDARY);
-            AnchorBox(volLabel.rectTransform, new Vector2(0.5f, 0.73f), new Vector2(500, 30));
-            volLabel.text = "소리 크기";
-
-            var volumeSlider = MkSlider("VolumeSlider", menuCard.transform);
-            volumeSlider.minValue = 0f; volumeSlider.maxValue = 1f;
-            volumeSlider.wholeNumbers = false; volumeSlider.value = 1f;
-            volumeSlider.interactable = true; volumeSlider.transition = Selectable.Transition.None;
-            AnchorBox(volumeSlider.GetComponent<RectTransform>(), new Vector2(0.5f, 0.63f), new Vector2(500, 28));
+            // 볼륨 3채널 (음악 / 효과음 / 음성) — 텍스트 라벨 + 원형핸들 슬라이더
+            var musicSlider = MkVolumeRow(menuCard.transform, "배경음",   0.80f);
+            var sfxSlider   = MkVolumeRow(menuCard.transform, "효과음", 0.715f);
+            var voiceSlider = MkVolumeRow(menuCard.transform, "음성",     0.63f);
 
             var guideOpenBtn = MkButton("GuideOpenButton", menuCard.transform, "게임 설명서 보기", out _);
-            AnchorBox(guideOpenBtn.GetComponent<RectTransform>(), new Vector2(0.5f, 0.50f), new Vector2(480, 72));
+            AnchorBox(guideOpenBtn.GetComponent<RectTransform>(), new Vector2(0.5f, 0.485f), new Vector2(500, 66));
             BtnColor(guideOpenBtn, ACCENT);
 
             var homeBtn = MkButton("HomeButton", menuCard.transform, "홈화면으로 나가기", out _);
-            AnchorBox(homeBtn.GetComponent<RectTransform>(), new Vector2(0.5f, 0.34f), new Vector2(480, 72));
+            AnchorBox(homeBtn.GetComponent<RectTransform>(), new Vector2(0.5f, 0.355f), new Vector2(500, 66));
             BtnColor(homeBtn, new Color(0.3f, 0.5f, 0.8f, 1f)); // Blue color
 
             var quitBtn = MkButton("QuitButton", menuCard.transform, "게임 나가기", out _);
-            AnchorBox(quitBtn.GetComponent<RectTransform>(), new Vector2(0.5f, 0.18f), new Vector2(480, 72));
+            AnchorBox(quitBtn.GetComponent<RectTransform>(), new Vector2(0.5f, 0.225f), new Vector2(500, 66));
             BtnColor(quitBtn, COL_DANGER);
 
             var menuCloseBtn = MkButton("MenuCloseButton", menuCard.transform, "닫기", out _);
-            AnchorBox(menuCloseBtn.GetComponent<RectTransform>(), new Vector2(0.5f, 0.04f), new Vector2(480, 64));
+            AnchorBox(menuCloseBtn.GetComponent<RectTransform>(), new Vector2(0.5f, 0.075f), new Vector2(500, 60));
             BtnColor(menuCloseBtn, COL_NEUTRAL);
 
             // ════════════════════════════════════════════════
@@ -767,7 +836,7 @@ namespace Persuasion.EditorTools
             Full(stampText.rectTransform);
             stampText.fontStyle = FontStyles.Bold;
             stampText.characterSpacing = 1.5f;
-            stampText.text = "🔴  [ 1급 기밀 지침 ]\nCONFIDENTIAL MANUAL";
+            stampText.text = "●  [ 1급 기밀 지침 ]\nCONFIDENTIAL MANUAL";
 
             var divGO = MkPanel("Divider", guideBox.transform, new Color(0.55f, 0.44f, 0.32f, 0.40f), false);
             AnchorTopLeft(divGO.GetComponent<RectTransform>(), new Vector2(36, -72), new Vector2(1488, 2));
@@ -859,7 +928,7 @@ namespace Persuasion.EditorTools
                 "<b>• 심문 실패 조건</b>\n" +
                 "3연속 설득도 0% 유지 또는 제한 턴 초과 시 심문 실패 처리됩니다.";
 
-            var guideCloseBtn = MkButton("GuideCloseButton", guideBox.transform, "[ 📁 지침서 확인 완료 ]", out var guideCloseLbl);
+            var guideCloseBtn = MkButton("GuideCloseButton", guideBox.transform, "[ ◆ 지침서 확인 완료 ]", out var guideCloseLbl);
             AnchorBox(guideCloseBtn.GetComponent<RectTransform>(), new Vector2(0.5f, 0.05f), new Vector2(340, 60));
             guideCloseLbl.fontSize = 22;
             guideCloseLbl.fontStyle = FontStyles.Bold;
@@ -869,6 +938,9 @@ namespace Persuasion.EditorTools
             // TRAIT PANEL — 경찰청 수사 서류 파일 v2 (세련된 Dossier)
             // ════════════════════════════════════════════════
             var traitPanel = MkPanel("TraitPanel", canvasT, new Color(0.05f, 0.03f, 0.02f, 0.97f), true);
+
+            // 챕터별 헤더 텍스트 참조 (런타임에 PersuasionUI가 교체)
+            TMP_Text traitAgencyRef = null, traitSubRef = null, traitFooterRef = null;
 
             // ── Dossier 전용 색 ──
             Color D_PAPER  = new Color(0.95f, 0.92f, 0.85f, 1.00f);
@@ -975,6 +1047,7 @@ namespace Persuasion.EditorTools
                 Full(agTxt.rectTransform); agTxt.rectTransform.offsetMin = new Vector2(0, 8); agTxt.rectTransform.offsetMax = new Vector2(0, -8);
                 agTxt.fontStyle = FontStyles.Bold; agTxt.characterSpacing = 3.5f;
                 agTxt.text = "대한민국 경찰청     KOREA NATIONAL POLICE AGENCY     수사과";
+                traitAgencyRef = agTxt;
             }
 
             // ── 6) 문서 제목 ──
@@ -990,6 +1063,7 @@ namespace Persuasion.EditorTools
                 AnchorTopLeft(cm.rectTransform, new Vector2(96, -138), new Vector2(460, 20));
                 cm.characterSpacing = 1.5f;
                 cm.text = "CASE FILE  //  KBI-2024-RESTRICTED  //  수사 전담 요원 한정 열람";
+                traitSubRef = cm;
             }
 
             // ── 8) 수평 구분선 (두껍게) ──
@@ -1112,6 +1186,26 @@ namespace Persuasion.EditorTools
                 stampTxt.text = "기  밀  //  SECRET";
                 stampTxt.enableWordWrapping = false;
                 stampTxt.transform.localEulerAngles = new Vector3(0, 0, -20f);
+
+                // CONFIDENTIAL 도장 (우상단, 살짝 기울어진 빨간 박스)
+                var confBox = new GameObject("ConfidentialStamp", typeof(RectTransform), typeof(Image));
+                confBox.transform.SetParent(traitBox.transform, false);
+                var cbRt = confBox.GetComponent<RectTransform>();
+                cbRt.anchorMin = cbRt.anchorMax = new Vector2(1, 1); cbRt.pivot = new Vector2(1, 1);
+                cbRt.sizeDelta = new Vector2(212, 56); cbRt.anchoredPosition = new Vector2(-44, -30);
+                cbRt.localEulerAngles = new Vector3(0, 0, 5f);
+                var cbImg = confBox.GetComponent<Image>();
+                cbImg.color = new Color(D_RED.r, D_RED.g, D_RED.b, 0.10f);
+                cbImg.raycastTarget = false;
+                var cbBorder = MkPanel("Border", confBox.transform, new Color(D_RED.r, D_RED.g, D_RED.b, 0.85f), false);
+                Full(cbBorder.GetComponent<RectTransform>());
+                cbBorder.GetComponent<RectTransform>().offsetMin = new Vector2(-2.5f, -2.5f);
+                cbBorder.GetComponent<RectTransform>().offsetMax = new Vector2(2.5f, 2.5f);
+                cbBorder.transform.SetAsFirstSibling();
+                var confTxt = MkText("Label", confBox.transform, 26, TextAlignmentOptions.Center, new Color(0.70f, 0.12f, 0.12f, 0.92f));
+                Full(confTxt.rectTransform);
+                confTxt.fontStyle = FontStyles.Bold; confTxt.characterSpacing = 3f;
+                confTxt.text = "CONFIDENTIAL"; confTxt.enableWordWrapping = false;
             }
 
             // ── 14) 본문 텍스트 ──
@@ -1145,6 +1239,7 @@ namespace Persuasion.EditorTools
                 Full(footerTxt.rectTransform);
                 footerTxt.fontStyle = FontStyles.Bold; footerTxt.characterSpacing = 3f;
                 footerTxt.text = "SECRET  //  FOR OFFICIAL USE ONLY  //  열람 후 즉시 파기";
+                traitFooterRef = footerTxt;
             }
 
             // ── 16) 닫기 버튼 ──
@@ -1232,6 +1327,14 @@ namespace Persuasion.EditorTools
             Wire(audioMgr, "manager", manager);
             Wire(audioMgr, "library", audioLib);
 
+            // 효과음 배선: 타이핑(키보드) 루프 + 차 브레이크 원샷
+            var typingClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/keyboard_type.wav");
+            var brakeClip  = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/car_brake.wav");
+            if (typingClip != null) Wire(audioMgr, "typingSfx", typingClip);
+            else Debug.LogWarning("[Persuasion] keyboard_type.wav 없음");
+            if (brakeClip != null) Wire(audioMgr, "carBrakeSfx", brakeClip);
+            else Debug.LogWarning("[Persuasion] car_brake.wav 없음");
+
             // ════════════════════════════════════════════════
             // PersuasionUI 배선
             // ════════════════════════════════════════════════
@@ -1246,6 +1349,7 @@ namespace Persuasion.EditorTools
             Wire(ui, "startButton",            startBtn);
             Wire(ui, "introBackgroundImage",   introBgImg);
             Wire(ui, "introMenuButton",        introMenuBtn);
+            Wire(ui, "introQuitButton",        introQuitBtn);
             Wire(ui, "transitionArtLibrary",   transitionLibrary);
             Wire(ui, "storyBeatPanel",         storyBeatPanel);
             Wire(ui, "storyBeatImage",         storyBeatImage);
@@ -1282,13 +1386,18 @@ namespace Persuasion.EditorTools
             Wire(ui, "traitTitleText",         traitTitleText);
             Wire(ui, "traitText",              traitText);
             Wire(ui, "traitPhotoImage",        traitPhotoImageRef);
+            Wire(ui, "traitAgencyText",        traitAgencyRef);
+            Wire(ui, "traitSubHeaderText",     traitSubRef);
+            Wire(ui, "traitFooterText",        traitFooterRef);
             Wire(ui, "traitCloseButton",       traitCloseBtn);
             Wire(ui, "historyPanel",           historyPanel);
             Wire(ui, "historyContent",         histContentRt);
             Wire(ui, "historyScrollRect",      histScrollRect);
             Wire(ui, "historyCloseButton",     histCloseBtn);
             Wire(ui, "menuPanel",              menuPanel);
-            Wire(ui, "volumeSlider",           volumeSlider);
+            Wire(ui, "musicSlider",            musicSlider);
+            Wire(ui, "sfxSlider",              sfxSlider);
+            Wire(ui, "voiceSlider",            voiceSlider);
             Wire(ui, "homeButton",             homeBtn);
             Wire(ui, "quitButton",             quitBtn);
             Wire(ui, "menuCloseButton",        menuCloseBtn);
@@ -1360,6 +1469,197 @@ namespace Persuasion.EditorTools
             rt.sizeDelta = size; rt.anchoredPosition = pos;
         }
 
+        // ── 라운드/섀도 스프라이트 (각진 사각형 대신 둥근 모서리+깊이 → PPT 느낌 제거) ──
+        private static Sprite _spRound, _spShadow;
+        private const int ROUND_RADIUS = 28;
+        private const int SHADOW_BLUR  = 22;
+
+        private static Sprite RoundSprite  { get { if (_spRound  == null) _spRound  = EnsureSprite("ui_round",  ROUND_RADIUS, false, 0);           return _spRound;  } }
+        private static Sprite ShadowSprite { get { if (_spShadow == null) _spShadow = EnsureSprite("ui_shadow", ROUND_RADIUS, true,  SHADOW_BLUR); return _spShadow; } }
+
+        // PNG 에셋으로 저장한 9-slice 스프라이트를 생성/로드 (인메모리 스프라이트는 빌드에서 참조 유실됨)
+        private static Sprite EnsureSprite(string fileName, int radius, bool shadow, int blur)
+        {
+            const string dir = "Assets/Art/Generated";
+            string path = dir + "/" + fileName + ".png";
+            if (!System.IO.Directory.Exists(dir)) { System.IO.Directory.CreateDirectory(dir); AssetDatabase.Refresh(); }
+
+            var tex = shadow ? MakeShadowTex(radius, blur) : MakeRoundedTex(radius);
+            System.IO.File.WriteAllBytes(path, tex.EncodeToPNG());
+            Object.DestroyImmediate(tex);
+            AssetDatabase.ImportAsset(path);
+
+            var ti = (TextureImporter)AssetImporter.GetAtPath(path);
+            ti.textureType         = TextureImporterType.Sprite;
+            ti.spriteImportMode    = SpriteImportMode.Single;
+            ti.mipmapEnabled       = false;
+            ti.alphaIsTransparency = true;
+            ti.wrapMode            = TextureWrapMode.Clamp;
+            ti.filterMode          = FilterMode.Bilinear;
+            ti.textureCompression  = TextureImporterCompression.Uncompressed;
+            var st = new TextureImporterSettings();
+            ti.ReadTextureSettings(st);
+            int bd = shadow ? radius + blur : radius;
+            st.spriteBorder    = new Vector4(bd, bd, bd, bd);
+            st.spriteMeshType  = SpriteMeshType.FullRect;
+            st.spriteGenerateFallbackPhysicsShape = false;
+            ti.SetTextureSettings(st);
+            ti.SaveAndReimport();
+
+            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        }
+
+        // 모서리 반경 radius인 흰색 라운드 사각형(안티에일리어스). 색은 Image.color로 틴트.
+        private static Texture2D MakeRoundedTex(int radius)
+        {
+            int s = radius * 2 + 4;
+            var tex = new Texture2D(s, s, TextureFormat.RGBA32, false, true);
+            var px = new Color32[s * s];
+            float half = s * 0.5f, b = half;
+            for (int y = 0; y < s; y++)
+            for (int x = 0; x < s; x++)
+            {
+                float dx = Mathf.Abs(x + 0.5f - half) - (b - radius);
+                float dy = Mathf.Abs(y + 0.5f - half) - (b - radius);
+                float o  = Mathf.Sqrt(Mathf.Max(dx,0f)*Mathf.Max(dx,0f) + Mathf.Max(dy,0f)*Mathf.Max(dy,0f));
+                float i  = Mathf.Min(Mathf.Max(dx, dy), 0f);
+                float d  = o + i - radius;                 // rounded-rect SDF
+                float a  = Mathf.Clamp01(0.5f - d);        // 1px AA
+                px[y*s + x] = new Color32(255,255,255,(byte)(a*255));
+            }
+            tex.SetPixels32(px); tex.Apply();
+            return tex;
+        }
+
+        // 부드러운 드롭섀도(반경 radius, blur 만큼 알파 감쇠). 검정 틴트로 사용.
+        private static Texture2D MakeShadowTex(int radius, int blur)
+        {
+            int ext = radius + blur;
+            int s = ext * 2 + 4;
+            var tex = new Texture2D(s, s, TextureFormat.RGBA32, false, true);
+            var px = new Color32[s * s];
+            float half = s * 0.5f, b = half - blur;
+            for (int y = 0; y < s; y++)
+            for (int x = 0; x < s; x++)
+            {
+                float dx = Mathf.Abs(x + 0.5f - half) - (b - radius);
+                float dy = Mathf.Abs(y + 0.5f - half) - (b - radius);
+                float o  = Mathf.Sqrt(Mathf.Max(dx,0f)*Mathf.Max(dx,0f) + Mathf.Max(dy,0f)*Mathf.Max(dy,0f));
+                float i  = Mathf.Min(Mathf.Max(dx, dy), 0f);
+                float d  = o + i - radius;
+                float a  = d <= 0f ? 1f : Mathf.Clamp01(1f - d/blur); a *= a;
+                px[y*s + x] = new Color32(255,255,255,(byte)(a*255));
+            }
+            tex.SetPixels32(px); tex.Apply();
+            return tex;
+        }
+
+        // ── 설정 아이콘(음표/스피커/마이크) 절차적 생성 ──
+        private static Sprite _icoMusic, _icoSpeaker, _icoMic;
+        private static Sprite IconMusic   { get { if (_icoMusic   == null) _icoMusic   = EnsureIcon("ico_music",   DrawMusic);   return _icoMusic;   } }
+        private static Sprite IconSpeaker { get { if (_icoSpeaker == null) _icoSpeaker = EnsureIcon("ico_speaker", DrawSpeaker); return _icoSpeaker; } }
+        private static Sprite IconMic     { get { if (_icoMic     == null) _icoMic     = EnsureIcon("ico_mic",     DrawMic);     return _icoMic;     } }
+
+        private static Sprite EnsureIcon(string fileName, System.Action<Color32[], int> draw)
+        {
+            const string dir = "Assets/Art/Generated";
+            string path = dir + "/" + fileName + ".png";
+            if (!System.IO.Directory.Exists(dir)) { System.IO.Directory.CreateDirectory(dir); AssetDatabase.Refresh(); }
+            const int S = 72;
+            var tex = new Texture2D(S, S, TextureFormat.RGBA32, false, true);
+            var px = new Color32[S * S];
+            draw(px, S);
+            tex.SetPixels32(px); tex.Apply();
+            System.IO.File.WriteAllBytes(path, tex.EncodeToPNG());
+            Object.DestroyImmediate(tex);
+            AssetDatabase.ImportAsset(path);
+            var ti = (TextureImporter)AssetImporter.GetAtPath(path);
+            ti.textureType = TextureImporterType.Sprite; ti.spriteImportMode = SpriteImportMode.Single;
+            ti.mipmapEnabled = false; ti.alphaIsTransparency = true; ti.filterMode = FilterMode.Bilinear;
+            ti.textureCompression = TextureImporterCompression.Uncompressed;
+            ti.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        }
+
+        // 픽셀 프리미티브 (백색, 안티에일리어스 근사)
+        private static void Px(Color32[] p, int S, int x, int y, float a)
+        {
+            if (x < 0 || y < 0 || x >= S || y >= S || a <= 0f) return;
+            int i = y * S + x; byte na = (byte)(Mathf.Clamp01(a) * 255);
+            if (na > p[i].a) p[i] = new Color32(255, 255, 255, na);
+        }
+        private static void Disc(Color32[] p, int S, float cx, float cy, float r)
+        {
+            for (int y = (int)(cy - r - 1); y <= cy + r + 1; y++)
+            for (int x = (int)(cx - r - 1); x <= cx + r + 1; x++)
+            { float d = Mathf.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy)); Px(p, S, x, y, Mathf.Clamp01(r - d + 0.5f)); }
+        }
+        private static void FRect(Color32[] p, int S, float x0, float y0, float x1, float y1)
+        {
+            for (int y = (int)y0; y <= y1; y++) for (int x = (int)x0; x <= x1; x++) Px(p, S, x, y, 1f);
+        }
+        private static void Ring(Color32[] p, int S, float cx, float cy, float r, float th, float a0, float a1)
+        {
+            for (int y = (int)(cy - r - th); y <= cy + r + th; y++)
+            for (int x = (int)(cx - r - th); x <= cx + r + th; x++)
+            {
+                float dx = x - cx, dy = y - cy; float d = Mathf.Sqrt(dx * dx + dy * dy);
+                float ang = Mathf.Atan2(dy, dx) * Mathf.Rad2Deg; if (ang < 0) ang += 360;
+                if (ang < a0 || ang > a1) continue;
+                Px(p, S, x, y, Mathf.Clamp01(th - Mathf.Abs(d - r) + 0.5f));
+            }
+        }
+        private static void DrawMusic(Color32[] p, int S)
+        {
+            Disc(p, S, 24, 50, 9);                 // 음표 머리
+            FRect(p, S, 31, 18, 34, 51);           // 기둥
+            FRect(p, S, 34, 18, 50, 22);           // 깃발 상단
+            FRect(p, S, 46, 22, 50, 34);           // 깃발 세로
+        }
+        private static void DrawSpeaker(Color32[] p, int S)
+        {
+            FRect(p, S, 16, 30, 26, 42);           // 스피커 몸통
+            for (int y = 22; y <= 50; y++)         // 원뿔
+            { float w = (Mathf.Abs(y - 36) <= 6) ? 14 : 14 - (Mathf.Abs(y - 36) - 6) * 1.4f; if (w > 0) FRect(p, S, 26, y, 26 + w, y); }
+            Ring(p, S, 40, 36, 12, 2.2f, -45, 45); // 음파 1
+            Ring(p, S, 40, 36, 19, 2.2f, -45, 45); // 음파 2
+        }
+        private static void DrawMic(Color32[] p, int S)
+        {
+            FRect(p, S, 29, 14, 43, 40); Disc(p, S, 36, 14, 7); Disc(p, S, 36, 40, 7); // 캡슐 머리
+            Ring(p, S, 36, 38, 15, 2.4f, 200, 340);   // 받침 곡선
+            FRect(p, S, 34.5f, 52, 37.5f, 60);         // 스탠드
+            FRect(p, S, 27, 60, 45, 63);               // 받침대
+        }
+
+        // 이미지에 둥근 모서리 적용
+        private static void Round(Image img, float cornerScale = 2.0f)
+        {
+            if (img == null) return;
+            img.sprite = RoundSprite;
+            img.type   = Image.Type.Sliced;
+            img.pixelsPerUnitMultiplier = cornerScale;
+        }
+
+        // 대상 뒤에 부드러운 그림자 추가(첫 자식)
+        private static void AddShadow(GameObject target, float spread = 20f, float alpha = 0.38f, float yOffset = -5f)
+        {
+            if (target == null) return;
+            var sh = new GameObject("Shadow", typeof(RectTransform), typeof(Image));
+            sh.transform.SetParent(target.transform, false);
+            sh.transform.SetAsFirstSibling();
+            var rt = sh.GetComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+            rt.offsetMin = new Vector2(-spread, -spread + yOffset);
+            rt.offsetMax = new Vector2( spread,  spread + yOffset);
+            var img = sh.GetComponent<Image>();
+            img.sprite = ShadowSprite;
+            img.type   = Image.Type.Sliced;
+            img.pixelsPerUnitMultiplier = 1f;
+            img.color  = new Color(0f, 0f, 0f, alpha);
+            img.raycastTarget = false;
+        }
+
         // ── UI 팩토리 ────────────────────────────────────────────────
 
         private static GameObject MkPanel(string name, Transform parent, Color bg, bool blockRaycast)
@@ -1396,17 +1696,22 @@ namespace Persuasion.EditorTools
             var img = go.GetComponent<Image>();
             img.color = COL_NEUTRAL;
             img.raycastTarget = true;
+            Round(img);   // 둥근 모서리
 
-            // Stamp border: brighter thin line around each button
+            // Stamp border: brighter thin rounded line around each button
             var bdrGO = new GameObject("Border", typeof(RectTransform), typeof(Image));
             bdrGO.transform.SetParent(go.transform, false);
             bdrGO.transform.SetAsFirstSibling();
             Full(bdrGO.GetComponent<RectTransform>());
-            bdrGO.GetComponent<RectTransform>().offsetMin = new Vector2(-2, -2);
-            bdrGO.GetComponent<RectTransform>().offsetMax = new Vector2( 2,  2);
+            bdrGO.GetComponent<RectTransform>().offsetMin = new Vector2(-1.5f, -1.5f);
+            bdrGO.GetComponent<RectTransform>().offsetMax = new Vector2( 1.5f,  1.5f);
             var bdrImg = bdrGO.GetComponent<Image>();
-            bdrImg.color = new Color(1f, 1f, 1f, 0.10f);
+            bdrImg.color = new Color(1f, 1f, 1f, 0.12f);
             bdrImg.raycastTarget = false;
+            Round(bdrImg);
+
+            // 부드러운 그림자로 깊이감
+            AddShadow(go, 16f, 0.32f, -4f);
 
             var btn = go.GetComponent<Button>();
             btn.targetGraphic = img;
@@ -1467,7 +1772,9 @@ namespace Persuasion.EditorTools
             var bg = new GameObject("Background", typeof(RectTransform), typeof(Image));
             bg.transform.SetParent(go.transform, false);
             Full(bg.GetComponent<RectTransform>());
-            bg.GetComponent<Image>().color = new Color(0.06f, 0.07f, 0.10f, 0.85f);
+            var bgImg = bg.GetComponent<Image>();
+            bgImg.color = new Color(0.06f, 0.07f, 0.10f, 0.85f);
+            Round(bgImg, 3.2f);   // 둥근 캡슐 트랙
 
             var fillArea = new GameObject("Fill Area", typeof(RectTransform));
             fillArea.transform.SetParent(go.transform, false);
@@ -1480,6 +1787,7 @@ namespace Persuasion.EditorTools
             fillRt.offsetMin = fillRt.offsetMax = Vector2.zero;
             var fillImg = fillGO.GetComponent<Image>();
             fillImg.color = persuasionMode ? new Color(0.75f, 0.17f, 0.17f, 1f) : ACCENT;
+            Round(fillImg, 3.2f);   // 둥근 채움
 
             slider.fillRect      = fillRt;
             slider.direction     = Slider.Direction.LeftToRight;
@@ -1493,6 +1801,69 @@ namespace Persuasion.EditorTools
                 var sc = go.AddComponent<PersuasionSliderColor>();
                 Wire(sc, "fill", fillImg);
             }
+            return slider;
+        }
+
+        // 설정용 원형 핸들 볼륨 슬라이더 (둥근 트랙 + 흰 원형 핸들)
+        private static Sprite _spCircle;
+        private static Sprite CircleSprite { get { if (_spCircle == null) _spCircle = EnsureIcon("ui_circle", (p, S) => Disc(p, S, S / 2f, S / 2f, S / 2f - 1.5f)); return _spCircle; } }
+
+        private static Slider MkVolumeSlider(string name, Transform parent)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(Slider));
+            go.transform.SetParent(parent, false);
+            var slider = go.GetComponent<Slider>();
+
+            var bg = new GameObject("Background", typeof(RectTransform), typeof(Image));
+            bg.transform.SetParent(go.transform, false);
+            var bgRt = bg.GetComponent<RectTransform>();
+            bgRt.anchorMin = new Vector2(0, 0.5f); bgRt.anchorMax = new Vector2(1, 0.5f);
+            bgRt.sizeDelta = new Vector2(0, 14); bgRt.anchoredPosition = Vector2.zero;
+            var bgImg = bg.GetComponent<Image>(); bgImg.color = new Color(0.17f, 0.19f, 0.25f, 1f); Round(bgImg, 3.4f);
+
+            var fillArea = new GameObject("Fill Area", typeof(RectTransform));
+            fillArea.transform.SetParent(go.transform, false);
+            var faRt = fillArea.GetComponent<RectTransform>();
+            faRt.anchorMin = new Vector2(0, 0.5f); faRt.anchorMax = new Vector2(1, 0.5f);
+            faRt.sizeDelta = new Vector2(0, 14); faRt.anchoredPosition = Vector2.zero;
+            var fillGO = new GameObject("Fill", typeof(RectTransform), typeof(Image));
+            fillGO.transform.SetParent(fillArea.transform, false);
+            var fillRt = fillGO.GetComponent<RectTransform>();
+            fillRt.anchorMin = Vector2.zero; fillRt.anchorMax = Vector2.one; fillRt.offsetMin = fillRt.offsetMax = Vector2.zero;
+            var fillImg = fillGO.GetComponent<Image>(); fillImg.color = new Color(0.82f, 0.86f, 0.96f, 1f); Round(fillImg, 3.4f);
+
+            var handleArea = new GameObject("Handle Slide Area", typeof(RectTransform));
+            handleArea.transform.SetParent(go.transform, false);
+            Full(handleArea.GetComponent<RectTransform>());
+            var handleGO = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+            handleGO.transform.SetParent(handleArea.transform, false);
+            var hRt = handleGO.GetComponent<RectTransform>();
+            hRt.sizeDelta = new Vector2(26, 26);
+            var hImg = handleGO.GetComponent<Image>(); hImg.sprite = CircleSprite; hImg.color = Color.white;
+
+            slider.fillRect = fillRt; slider.handleRect = hRt; slider.targetGraphic = hImg;
+            slider.direction = Slider.Direction.LeftToRight;
+            slider.transition = Selectable.Transition.None;
+            slider.navigation = new Navigation { mode = Navigation.Mode.None };
+            slider.minValue = 0f; slider.maxValue = 1f; slider.wholeNumbers = false;
+            slider.interactable = true; slider.value = 1f;
+            return slider;
+        }
+
+        // 라벨 + 볼륨 슬라이더 한 줄
+        private static Slider MkVolumeRow(Transform parent, string labelText, float anchorY)
+        {
+            var txtGO = MkText("Label", parent, 24, TextAlignmentOptions.Right, new Color(0.90f, 0.92f, 0.97f, 1f));
+            txtGO.text = labelText;
+            txtGO.fontStyle = FontStyles.Bold;
+            var txtRt = txtGO.GetComponent<RectTransform>();
+            txtRt.anchorMin = txtRt.anchorMax = new Vector2(0.5f, anchorY); txtRt.pivot = new Vector2(1f, 0.5f);
+            txtRt.sizeDelta = new Vector2(120, 40); txtRt.anchoredPosition = new Vector2(-190, 0);
+
+            var slider = MkVolumeSlider("Slider", parent);
+            var sRt = slider.GetComponent<RectTransform>();
+            sRt.anchorMin = sRt.anchorMax = new Vector2(0.5f, anchorY); sRt.pivot = new Vector2(0.5f, 0.5f);
+            sRt.sizeDelta = new Vector2(410, 30); sRt.anchoredPosition = new Vector2(35, 0);
             return slider;
         }
 
@@ -1535,7 +1906,7 @@ namespace Persuasion.EditorTools
             var input = go.GetComponent<TMP_InputField>();
 
             var inputBg = go.GetComponent<Image>();
-            if (inputBg != null) inputBg.color = new Color(0.08f, 0.09f, 0.12f, 0.95f);
+            if (inputBg != null) { inputBg.color = new Color(0.08f, 0.09f, 0.12f, 0.95f); Round(inputBg); }
 
             foreach (var t in go.GetComponentsInChildren<TextMeshProUGUI>(true))
             {
@@ -1686,6 +2057,32 @@ namespace Persuasion.EditorTools
             }
             p.objectReferenceValue = value;
             so.ApplyModifiedProperties();
+        }
+
+        // 오브젝트 배열 필드 배선 (Sprite[] 등)
+        private static void WireArray(Object target, string field, Object[] values)
+        {
+            var so = new SerializedObject(target);
+            var p  = so.FindProperty(field);
+            if (p == null) { Debug.LogError($"[Persuasion] 배열 필드 못 찾음: {target.GetType().Name}.{field}"); return; }
+            p.arraySize = values.Length;
+            for (int i = 0; i < values.Length; i++)
+                p.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
+            so.ApplyModifiedProperties();
+        }
+
+        // PNG를 Sprite 타입으로 임포트 (배경 슬라이드용). 이미 Sprite면 통과.
+        private static Sprite LoadAsSprite(string path)
+        {
+            var ti = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (ti != null && ti.textureType != TextureImporterType.Sprite)
+            {
+                ti.textureType     = TextureImporterType.Sprite;
+                ti.spriteImportMode = SpriteImportMode.Single;
+                ti.mipmapEnabled    = false;
+                ti.SaveAndReimport();
+            }
+            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
 
         private static void AddSceneToBuild(string path)
