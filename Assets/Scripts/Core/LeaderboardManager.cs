@@ -18,6 +18,8 @@ namespace Persuasion.Core
     public class LeaderboardManager : MonoBehaviour
     {
         [SerializeField] private string endpoint = "/api/leaderboard";
+        // itch.io 등 백엔드 없는 정적 호스트에서 호출할 API 절대 주소(Vercel)
+        private const string AbsoluteLeaderboardUrl = "https://seolduk-game.vercel.app/api/leaderboard";
         [Tooltip("에디터 테스트용 절대 URL (예: https://site.netlify.app). 비우면 에디터에서 네트워크 생략.")]
         [SerializeField] private string editorBaseUrl = "";
 
@@ -58,12 +60,16 @@ namespace Persuasion.Core
             {
                 try
                 {
-                    var uri = new Uri(page);
+                    var uri     = new Uri(page);
+                    var apiHost = new Uri(AbsoluteLeaderboardUrl).Host;
+                    // 게임이 API와 다른 도메인(itch.io 등)에 올라간 경우: 절대 Vercel URL로 호출
+                    if (!string.Equals(uri.Host, apiHost, StringComparison.OrdinalIgnoreCase))
+                        return AbsoluteLeaderboardUrl;
                     return uri.GetLeftPart(UriPartial.Authority) + (endpoint.StartsWith("/") ? endpoint : "/" + endpoint);
                 }
                 catch { }
             }
-            return endpoint;
+            return AbsoluteLeaderboardUrl;
 #else
             if (!string.IsNullOrEmpty(editorBaseUrl))
                 return editorBaseUrl.TrimEnd('/') + (endpoint.StartsWith("/") ? endpoint : "/" + endpoint);

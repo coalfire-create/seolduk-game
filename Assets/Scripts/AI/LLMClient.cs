@@ -75,21 +75,33 @@ namespace Persuasion.AI
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-        /// <summary>프록시 상대 경로를 현재 페이지 오리진 기준 절대 URL로 변환.</summary>
+        /// <summary>
+        /// 프록시 호출 URL 결정.
+        /// - itch.io 등 백엔드 없는 정적 호스트: 페이지 오리진엔 /api/chat이 없으므로
+        ///   API가 배포된 절대 URL(Vercel)로 호출한다(chat.mjs가 CORS 허용).
+        /// - Vercel 자체 호스팅: 오리진이 같아 상대경로와 동일하게 동작.
+        /// </summary>
         private string ResolveProxyUrl()
         {
-            if (string.IsNullOrEmpty(proxyEndpoint)) return "/api/chat";
-            if (proxyEndpoint.StartsWith("http")) return proxyEndpoint;
+            if (!string.IsNullOrEmpty(proxyEndpoint) && proxyEndpoint.StartsWith("http"))
+                return proxyEndpoint;
+
             string page = Application.absoluteURL;
-            if (string.IsNullOrEmpty(page)) return proxyEndpoint;
+            if (string.IsNullOrEmpty(page)) return DefaultStandaloneProxy;
             try
             {
-                var uri = new Uri(page);
+                var uri     = new Uri(page);
+                var apiHost = new Uri(DefaultStandaloneProxy).Host;
+                // 게임이 API와 다른 도메인(itch.io 등)에 올라간 경우: 절대 Vercel URL로 호출
+                if (!string.Equals(uri.Host, apiHost, StringComparison.OrdinalIgnoreCase))
+                    return DefaultStandaloneProxy;
+
                 string origin = uri.GetLeftPart(UriPartial.Authority);
-                string path = proxyEndpoint.StartsWith("/") ? proxyEndpoint : "/" + proxyEndpoint;
+                string path   = string.IsNullOrEmpty(proxyEndpoint) ? "/api/chat"
+                              : (proxyEndpoint.StartsWith("/") ? proxyEndpoint : "/" + proxyEndpoint);
                 return origin + path;
             }
-            catch { return proxyEndpoint; }
+            catch { return DefaultStandaloneProxy; }
         }
 #endif
 
