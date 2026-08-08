@@ -29,15 +29,13 @@ namespace Persuasion.AI
 
         [Header("개발(에디터 전용): OpenAI 직접 호출")]
         [SerializeField] private string apiEndpoint = "https://api.openai.com/v1/chat/completions";
-        [SerializeField] private string model = "gpt-4o-mini";
-
-        // 1일 최대 API 호출 횟수 (클라이언트 측 소프트 제한 — UX용. 실제 비용 강제는 서버 프록시가 담당)
-        private const int DailyLimit = 50;
+        [SerializeField] private string model = "gpt-4.1";
 
         private string _cachedApiKey;
         private bool   _apiKeyLoaded;
         private bool   _apiKeyReady;   // 키/프록시 준비 신호
         private Coroutine _activeRequestCoroutine;
+        private UnityWebRequest _activeRequest;
 
         private void Awake()
         {
@@ -105,28 +103,18 @@ namespace Persuasion.AI
         /// <summary>진행 중인 LLM 요청 코루틴을 즉시 중단한다. UI 타임아웃 발동 시 호출.</summary>
         public void AbortCurrentRequest()
         {
-            if (_activeRequestCoroutine == null) return;
-            StopCoroutine(_activeRequestCoroutine);
-            _activeRequestCoroutine = null;
-        }
-
-        private bool CheckDailyLimit(out string limitError)
-        {
-            limitError = null;
-            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
-            string savedDate  = SaveManager.Get("llm_daily_date",  "");
-            int    savedCount = savedDate == today ? SaveManager.GetInt("llm_daily_count", 0) : 0;
-
-            if (savedCount >= DailyLimit)
+            if (_activeRequestCoroutine != null)
             {
-                GameAnalytics.LogRateLimitHit();
-                limitError = $"오늘의 AI 응답 한도({DailyLimit}회)에 도달했습니다.\n내일 다시 접속하면 한도가 초기화됩니다.";
-                return false;
+                StopCoroutine(_activeRequestCoroutine);
+                _activeRequestCoroutine = null;
             }
-
-            SaveManager.Set("llm_daily_date",  today);
-            SaveManager.SetInt("llm_daily_count", savedCount + 1);
-            return true;
+            
+            if (_activeRequest != null)
+            {
+                _activeRequest.Abort();
+                _activeRequest.Dispose();
+                _activeRequest = null;
+            }
         }
 
         private IEnumerator SendRequest(string systemPrompt, IReadOnlyList<ChatTurn> conversation,
@@ -151,38 +139,33 @@ namespace Persuasion.AI
             string targetUrl = apiEndpoint;
 #endif
 
-            if (!CheckDailyLimit(out string limitError))
-            {
-                onError?.Invoke(limitError);
-                _activeRequestCoroutine = null;
-                yield break;
-            }
-
             string body    = BuildRequestBody(systemPrompt, conversation);
             byte[] bodyRaw = Encoding.UTF8.GetBytes(body);
 
             const int maxAttempts = 3;
             for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
-                var request = new UnityWebRequest(targetUrl, "POST");
-                request.uploadHandler   = new UploadHandlerRaw(bodyRaw);
-                request.downloadHandler = new DownloadHandlerBuffer();
+                _activeRequest = new UnityWebRequest(targetUrl, "POST");
+                _activeRequest.uploadHandler   = new UploadHandlerRaw(bodyRaw);
+                _activeRequest.downloadHandler = new DownloadHandlerBuffer();
 #if !UNITY_WEBGL
-                request.timeout = 20; // WebGL에서는 무시됨 (UI 타임아웃이 대신 처리)
+                _activeRequest.timeout = 20; // WebGL에서는 무시됨 (UI 타임아웃이 대신 처리)
 #endif
-                request.SetRequestHeader("Content-Type", "application/json");
+                _activeRequest.SetRequestHeader("Content-Type", "application/json");
 #if UNITY_EDITOR
                 // 에디터 직접 호출 때만 인증 헤더. 플레이어 빌드는 프록시가 서버에서 키 주입.
-                request.SetRequestHeader("Authorization", "Bearer " + _cachedApiKey);
+                _activeRequest.SetRequestHeader("Authorization", "Bearer " + _cachedApiKey);
 #endif
 
-                yield return request.SendWebRequest();
+                yield return _activeRequest.SendWebRequest();
 
-                long   code    = request.responseCode;
-                bool   success = request.result == UnityWebRequest.Result.Success;
-                string errText = request.error + "\n" + (request.downloadHandler != null ? request.downloadHandler.text : "");
-                string payload = success ? request.downloadHandler.text : null;
-                request.Dispose();
+                long   code    = _activeRequest.responseCode;
+                bool   success = _activeRequest.result == UnityWebRequest.Result.Success;
+                string errText = _activeRequest.error + "\n" + (_activeRequest.downloadHandler != null ? _activeRequest.downloadHandler.text : "");
+                string payload = success ? _activeRequest.downloadHandler.text : null;
+                
+                _activeRequest.Dispose();
+                _activeRequest = null;
 
                 if (success)
                 {
@@ -215,8 +198,13 @@ namespace Persuasion.AI
             };
             if (conversation != null)
             {
-                foreach (var turn in conversation)
+                // 긴 대화도 절대 서버 한도에 안 걸리도록 최근 N개만 전송(슬라이딩 윈도우).
+                // 최신 문맥은 유지하면서 토큰/비용도 무한히 커지지 않게 한다.
+                const int MaxHistory = 60;
+                int start = conversation.Count > MaxHistory ? conversation.Count - MaxHistory : 0;
+                for (int i = start; i < conversation.Count; i++)
                 {
+                    var turn = conversation[i];
                     if (turn == null || string.IsNullOrEmpty(turn.text)) continue;
                     messages.Add(new OpenAIMessage
                     {

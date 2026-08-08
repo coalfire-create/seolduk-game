@@ -30,7 +30,8 @@ namespace Persuasion.UI
         [SerializeField] private Button startButton;
         [SerializeField] private Image introBackgroundImage;
         [SerializeField] private Graphic recDotGraphic;
-        [SerializeField] private Button introMenuButton;        // 인트로 화면 우측 상단 메뉴 버튼
+        [SerializeField] private Button introMenuButton;        // 인트로 '설정' 버튼
+        [SerializeField] private Button introQuitButton;        // 인트로 '종료' 버튼
 
         [Header("스토리 비트 패널 (인트로컷/전환컷)")]
         [SerializeField] private GameObject storyBeatPanel;
@@ -38,6 +39,9 @@ namespace Persuasion.UI
         [SerializeField] private TMP_Text storyBeatText;
         [SerializeField] private Button storyBeatContinueButton;
         [SerializeField] private TransitionArtLibrary transitionArtLibrary;
+        [SerializeField] private TMP_Text storyHeaderLabel;    // "◆ 사건 현장" / "◆ 용의자 프로파일"
+        [SerializeField] private TMP_Text storyPageIndicator; // "1 / 5"
+        [SerializeField] private TMP_Text storyCaseLabel;     // "CASE #001"
         [Header("단계 및 목표 연출 오버레이")]
         [SerializeField] private GameObject stageIntroOverlay;
         [SerializeField] private CanvasGroup stageIntroGroup;
@@ -75,6 +79,7 @@ namespace Persuasion.UI
         [SerializeField] private TMP_Text emotionLabel;
         [SerializeField] private GameObject hintPanel;
         [SerializeField] private TMP_Text hintText;
+        [SerializeField] private Transform evidenceContainer; // 하단 증거 바
 
         [Header("피의자 특징 프로필 패널")]
         [SerializeField] private GameObject traitPanel;
@@ -82,6 +87,9 @@ namespace Persuasion.UI
         [SerializeField] private TMP_Text traitText;
         [SerializeField] private Image traitPhotoImage;
         [SerializeField] private Button traitCloseButton;
+        [SerializeField] private TMP_Text traitAgencyText;    // 상단 기관명 바 (챕터별)
+        [SerializeField] private TMP_Text traitSubHeaderText; // 부제(CASE FILE // ...) (챕터별)
+        [SerializeField] private TMP_Text traitFooterText;    // 하단 분류 띠 (챕터별)
 
         [Header("대화 기록 패널 (읽기 전용)")]
         [SerializeField] private GameObject historyPanel;
@@ -91,7 +99,9 @@ namespace Persuasion.UI
 
         [Header("메뉴 패널 (소리/나가기)")]
         [SerializeField] private GameObject menuPanel;
-        [SerializeField] private Slider volumeSlider;
+        [SerializeField] private Slider musicSlider;   // 음악
+        [SerializeField] private Slider sfxSlider;     // 효과음
+        [SerializeField] private Slider voiceSlider;   // 음성
         [SerializeField] private Button homeButton;
         [SerializeField] private Button quitButton;
         [SerializeField] private Button menuCloseButton;
@@ -151,6 +161,8 @@ namespace Persuasion.UI
         private Coroutine _sendLabelRoutine;
         private const float ApiTimeoutSec = 30f;
         private KoreanInputBridge _korBridge;
+        private Coroutine _storyTypeRoutine;    // 스토리 나래이션 타자기 효과
+        private bool _storyTyping;              // 나래이션 타이핑 진행 중 여부
 
         private struct ChatEntry { public bool isPlayer; public string text; }
 
@@ -158,12 +170,7 @@ namespace Persuasion.UI
         {
             startButton.onClick.AddListener(() => manager.GoToStageSelect());
             if (storyBeatContinueButton != null) storyBeatContinueButton.onClick.AddListener(OnStoryBeatContinue);
-            if (introBackgroundImage != null && transitionArtLibrary != null && transitionArtLibrary.titleScreen != null)
-            {
-                introBackgroundImage.sprite = transitionArtLibrary.titleScreen;
-                introBackgroundImage.color = Color.white;
-                introBackgroundImage.enabled = true;
-            }
+            // 오프닝 배경은 IntroSlideshow(3장 크로스페이드)가 담당하므로 여기서 titleScreen을 덮어쓰지 않는다.
             sendButton.onClick.AddListener(OnClickSend);
             if (inputField != null) inputField.onSubmit.AddListener(_ => OnClickSend()); // 엔터로 전송
 
@@ -188,42 +195,29 @@ namespace Persuasion.UI
             if (historyCloseButton != null) historyCloseButton.onClick.AddListener(CloseHistory);
             if (menuButton != null) menuButton.onClick.AddListener(OpenMenu);
             if (introMenuButton != null) introMenuButton.onClick.AddListener(OpenMenu);
+            if (introQuitButton != null) introQuitButton.onClick.AddListener(QuitGame);
             if (menuCloseButton != null) menuCloseButton.onClick.AddListener(CloseMenu);
             if (homeButton != null) homeButton.onClick.AddListener(GoToHome);
             if (quitButton != null) quitButton.onClick.AddListener(QuitGame);
             if (guideOpenButton != null) guideOpenButton.onClick.AddListener(OpenGuide);
             if (introGuideButton != null) introGuideButton.onClick.AddListener(OpenGuide);
             if (guideCloseButton != null) guideCloseButton.onClick.AddListener(CloseGuide);
-            if (volumeSlider != null)
-            {
-                volumeSlider.value = AudioListener.volume;
-                volumeSlider.onValueChanged.AddListener(v => AudioListener.volume = v);
-                EnhanceSliderVisibility(volumeSlider);
-            }
+            SetupVolumeSlider(musicSlider, () => AudioManager.Instance?.MusicVolume01 ?? 1f, v => AudioManager.Instance?.SetMusicVolume(v));
+            SetupVolumeSlider(sfxSlider,   () => AudioManager.Instance?.SfxVolume01   ?? 1f, v => AudioManager.Instance?.SetSfxVolume(v));
+            SetupVolumeSlider(voiceSlider, () => AudioManager.Instance?.VoiceVolume01 ?? 1f, v => AudioManager.Instance?.SetVoiceVolume(v));
+
+            // 씬에 이미 배치된 모든 버튼에 클릭 사운드 훅을 일괄 연결 (Canvas 전체 대상)
+            var canvasRoot = transform.parent != null ? transform.parent : transform;
+            foreach (var btn in canvasRoot.GetComponentsInChildren<Button>(true))
+                btn.onClick.AddListener(() => AudioManager.Instance?.PlayButtonClick());
         }
 
-        /// <summary>메뉴의 볼륨 슬라이더가 잘 안 보이는 문제 대응: 배경/채움/핸들 색을 대비 높게 재설정.</summary>
-        private static void EnhanceSliderVisibility(Slider slider)
+        /// <summary>볼륨 슬라이더를 저장값으로 초기화하고 변경 시 해당 채널에 적용.</summary>
+        private void SetupVolumeSlider(Slider slider, System.Func<float> getter, System.Action<float> setter)
         {
             if (slider == null) return;
-
-            // 배경(트랙): 어두운 반투명
-            var bg = slider.transform.Find("Background")?.GetComponent<Image>();
-            if (bg != null) bg.color = new Color(0.10f, 0.11f, 0.16f, 0.95f);
-
-            // 채움: 밝은 앰버 (설득도 UI 톤과 통일)
-            if (slider.fillRect != null)
-            {
-                var fill = slider.fillRect.GetComponent<Image>();
-                if (fill != null) fill.color = new Color(1.0f, 0.82f, 0.35f, 1f);
-            }
-
-            // 핸들: 밝은 흰색으로 명확히
-            if (slider.handleRect != null)
-            {
-                var handle = slider.handleRect.GetComponent<Image>();
-                if (handle != null) handle.color = new Color(1f, 1f, 1f, 1f);
-            }
+            slider.SetValueWithoutNotify(Mathf.Clamp01(getter()));
+            slider.onValueChanged.AddListener(v => setter(v));
         }
 
         private void OnEnable()
@@ -231,6 +225,7 @@ namespace Persuasion.UI
             manager.OnNPCReplied += HandleNPCReplied;
             manager.OnError += HandleError;
             manager.OnPhaseChanged += HandlePhaseChanged;
+            manager.OnEvidenceUnlocked += HandleEvidenceUnlocked;
         }
 
         private void OnDisable()
@@ -238,6 +233,7 @@ namespace Persuasion.UI
             manager.OnNPCReplied -= HandleNPCReplied;
             manager.OnError -= HandleError;
             manager.OnPhaseChanged -= HandlePhaseChanged;
+            manager.OnEvidenceUnlocked -= HandleEvidenceUnlocked;
         }
 
         private void Start()
@@ -248,7 +244,9 @@ namespace Persuasion.UI
             if (historyPanel != null) historyPanel.SetActive(false);
             if (menuPanel != null) menuPanel.SetActive(false);
             if (guidePanel != null) guidePanel.SetActive(false);
+            if (guidePanel != null) guidePanel.SetActive(false);
             if (leaderboardPanel != null) leaderboardPanel.SetActive(false);
+            if (evidenceContainer != null) evidenceContainer.gameObject.SetActive(false);
             ShowOnly(introPanel);
         }
 
@@ -258,13 +256,61 @@ namespace Persuasion.UI
             var stage = manager != null ? manager.CurrentStage : null;
             if (stage != null)
             {
-                if (traitTitleText != null)
-                    traitTitleText.text = "■  피의자 수사 분석 보고서";
+                // 챕터별 수사 파일 형식 (경찰 취조 / 첩보 공작 / AI 저항군)
+                string chap = stage.chapterId ?? "";
+                string agency, title, sub, footer, sec1, sec2, sec3, sec4;
+                string lblName, lblRank, rankVal, lblBg, lblPsy, lblTacticHdr, lblTactic, lblGoal;
+                if (chap == "ch2_spy")
+                {
+                    agency = "정보총국     COVERT OPERATIONS BUREAU     대상분석과";
+                    title  = "■  공작 대상 정보 파일";
+                    sub    = "DOSSIER  //  EYES-ONLY  //  현장 공작원 한정 열람";
+                    footer = "TOP SECRET  //  열람 후 즉시 소각  //  발각 주의";
+                    sec1 = "1. 대상 인적사항 & 접근 등급";  sec2 = "2. 배경 및 정황";
+                    sec3 = "3. 심리 성향 및 경계 수준";      sec4 = "4. 현장 공작 지침";
+                    lblName = "성명 / 직위"; lblRank = "접근 분류"; rankVal = "최우선 공략 대상 (기밀 확보 목표)";
+                    lblBg = "배경 정황"; lblPsy = "성향 및 경계";
+                    lblTacticHdr = "침투 전술"; lblTactic = "대상의 성향과 경계 수준을 파악해 신뢰를 얻고 방심을 유도";
+                    lblGoal = "공작 목표";
+                }
+                else if (chap == "ch3_ai")
+                {
+                    agency = "인류 저항군 사령부     HUMAN RESISTANCE COMMAND     정보분석반";
+                    title  = "■  대상 분석 파일";
+                    sub    = "TARGET ANALYSIS  //  ENCRYPTED  //  저항군 요원 한정 열람";
+                    footer = "CLASSIFIED  //  전송 후 즉시 파기  //  AI 감청 주의";
+                    sec1 = "1. 대상 식별정보 & 위협 등급";  sec2 = "2. 배경 및 정황";
+                    sec3 = "3. 행동 패턴 및 방어 체계";      sec4 = "4. 공략 지침";
+                    lblName = "식별명 / 유형"; lblRank = "위협 등급"; 
+                    rankVal = (stage.stageId == "stage_ai_terminal") ? "하위 (말단 감시 단말기)" : "최상위 (핵심 정보 보유)";
+                    lblBg = "배경 정황"; lblPsy = "행동 패턴";
+                    lblTacticHdr = "공략 전술"; lblTactic = "대상의 논리 체계와 허점을 파악해 방어 로직을 우회";
+                    lblGoal = "작전 목표";
+                }
+                else // ch1_interrogation (기본: 경찰)
+                {
+                    agency = "대한민국 경찰청     KOREA NATIONAL POLICE AGENCY     수사과";
+                    title  = "■  피의자 수사 분석 보고서";
+                    sub    = "CASE FILE  //  KBI-2024-RESTRICTED  //  수사 전담 요원 한정 열람";
+                    footer = "SECRET  //  FOR OFFICIAL USE ONLY  //  열람 후 즉시 파기";
+                    sec1 = "1. 피의자 인적사항 & 수사 등급"; sec2 = "2. 배경 사건 및 정황";
+                    sec3 = "3. 심리 성향 및 진술 패턴 분석";  sec4 = "4. 담당 수사관 심문 지침";
+                    lblName = "성명 / 직업"; lblRank = "수사 분류"; rankVal = "1급 자백 유도 대상 (주요 피의자)";
+                    lblBg = "사건 정황"; lblPsy = "행동 특성";
+                    lblTacticHdr = "권장 전술"; lblTactic = "상대의 성향과 관계, 약점을 파악해 심리적 동요 유도";
+                    lblGoal = "수사 목표";
+                }
+
+                if (traitTitleText     != null) traitTitleText.text     = title;
+                if (traitAgencyText    != null) traitAgencyText.text    = agency;
+                if (traitSubHeaderText != null) traitSubHeaderText.text = sub;
+                if (traitFooterText    != null) traitFooterText.text    = footer;
 
                 if (traitPhotoImage != null && portraitLibrary != null)
                 {
                     var set = portraitLibrary.Find(stage.stageId);
-                    Sprite photo = (set != null) ? set.baseSprite : null;
+                    // introSprite(캐릭터 소개 일러스트) 우선, 없으면 baseSprite 폴백
+                    Sprite photo = (set != null) ? (set.introSprite != null ? set.introSprite : set.baseSprite) : null;
                     if (photo != null)
                     {
                         traitPhotoImage.sprite = photo;
@@ -285,24 +331,25 @@ namespace Persuasion.UI
                     int tagIdx = personaShown.IndexOf('[');
                     if (tagIdx > 0) personaShown = personaShown.Substring(0, tagIdx).Trim();
 
-                    // 배경 사건 및 가족/신상 특징 요약
+                    // 배경/정황: 줄바꿈을 한 문단으로 정리 (인라인 불릿 깨짐 방지)
                     string bgSummary = string.Empty;
                     if (!string.IsNullOrEmpty(stage.backgroundNarration))
                     {
-                        bgSummary = stage.backgroundNarration.Replace("\n\n", "\n  • ").Replace("\n", " ");
+                        bgSummary = stage.backgroundNarration
+                            .Replace("\r\n", "\n").Replace("\n\n", " ").Replace("\n", " ").Trim();
                     }
 
                     traitText.text =
-                        $"<b><color=#B71C1C>■ [ 1. 피의자 인적사항 & 수사 등급 ]</color></b>\n" +
-                        $"  • <b>성 명 / 직 업</b> : {stage.characterName}\n" +
-                        $"  • <b>수사 분류</b> : 1급 자백 유도 대상 (주요 피의자)\n\n" +
-                        $"<b><color=#B71C1C>■ [ 2. 배경 사건 및 인적 신상 특징 ]</color></b>\n" +
-                        $"  • <b>가족 & 신상 배경</b> : {bgSummary}\n\n" +
-                        $"<b><color=#B71C1C>■ [ 3. 심리 성향 및 진술 패턴 분석 ]</color></b>\n" +
-                        $"  • <b>행동 특성</b> : {personaShown}\n\n" +
-                        $"<b><color=#B71C1C>■ [ 4. 담당 수사관 심문 지침 ]</color></b>\n" +
-                        $"  • <b>권장 전술</b> : 상대의 성향, 가족 관계, 아킬레스건을 파악해 심리적 동요 유도\n" +
-                        $"  • <b>수사 목표</b> : {stage.goal}";
+                        $"<b>[{sec1}]</b>\n" +
+                        $"  • <b>{lblName}</b> : {stage.characterName}\n" +
+                        $"  • <b>{lblRank}</b> : {rankVal}\n\n" +
+                        $"<b>[{sec2}]</b>\n" +
+                        $"  • <b>{lblBg}</b> : {bgSummary}\n\n" +
+                        $"<b>[{sec3}]</b>\n" +
+                        $"  • <b>{lblPsy}</b> : {personaShown}\n\n" +
+                        $"<b>[{sec4}]</b>\n" +
+                        $"  • <b>{lblTacticHdr}</b> : {lblTactic}\n" +
+                        $"  • <b>{lblGoal}</b> : {stage.goal}";
                 }
             }
             traitPanel.SetActive(true);
@@ -370,24 +417,86 @@ namespace Persuasion.UI
 
         private IEnumerator IntroTitleRoutine()
         {
-            Transform target = (introTitleGroup != null) ? introTitleGroup.transform : gameTitleText.transform;
-            if (introTitleGroup != null) introTitleGroup.alpha = 0f; else gameTitleText.alpha = 0f;
-            target.localScale = Vector3.one * 0.82f;
+            var title = gameTitleText;
+            if (title == null) yield break;
+            if (introTitleGroup != null)
+            {
+                introTitleGroup.alpha = 1f;
+                introTitleGroup.GetComponent<RectTransform>().localScale = Vector3.one;
+            }
 
-            const float dur = 1.1f;
+            // 그룹 내 그림자/부제 찾기
+            TMP_Text shadow = null, sub = null;
+            if (introTitleGroup != null)
+            {
+                var st = introTitleGroup.transform.Find("TitleShadow"); if (st != null) shadow = st.GetComponent<TMP_Text>();
+                var su = introTitleGroup.transform.Find("Subtitle");    if (su != null) sub    = su.GetComponent<TMP_Text>();
+            }
+            if (sub != null) { var c = sub.color; c.a = 0f; sub.color = c; }
+
+            const float stagger = 0.11f, fallDur = 0.5f, dropH = 470f;
+            title.ForceMeshUpdate();
+            int count = title.textInfo.characterCount;
+            float total = stagger * Mathf.Max(0, count - 1) + fallDur + 0.15f;
+
             float t = 0f;
-            while (t < dur)
+            while (t < total)
             {
                 t += Time.unscaledDeltaTime;
-                float k = Mathf.Clamp01(t / dur);
-                float e = 1f - Mathf.Pow(1f - k, 3f); // ease-out cubic
-                if (introTitleGroup != null) introTitleGroup.alpha = k; else gameTitleText.alpha = k;
-                float s = Mathf.Lerp(0.82f, 1f, e);
-                target.localScale = new Vector3(s, s, 1f);
+                CascadeApply(title, t, stagger, fallDur, dropH);
+                if (shadow != null) CascadeApply(shadow, t, stagger, fallDur, dropH);
                 yield return null;
             }
-            if (introTitleGroup != null) introTitleGroup.alpha = 1f; else gameTitleText.alpha = 1f;
-            target.localScale = Vector3.one;
+            title.ForceMeshUpdate();
+            if (shadow != null) shadow.ForceMeshUpdate();
+
+            // 부제는 타이틀 착지 후 페이드인
+            if (sub != null)
+            {
+                float ft = 0f;
+                while (ft < 0.45f) { ft += Time.unscaledDeltaTime; var c = sub.color; c.a = Mathf.Clamp01(ft / 0.45f); sub.color = c; yield return null; }
+                var cc = sub.color; cc.a = 1f; sub.color = cc;
+            }
+        }
+
+        // 글자마다 위에서 떨어지며 퉁퉁 튕기는 효과 적용 (TMP 글자별 메시 조작)
+        private static void CascadeApply(TMP_Text txt, float t, float stagger, float fallDur, float dropH)
+        {
+            txt.ForceMeshUpdate();
+            var info = txt.textInfo;
+            for (int i = 0; i < info.characterCount; i++)
+            {
+                var ch = info.characterInfo[i];
+                if (!ch.isVisible) continue;
+                int mi = ch.materialReferenceIndex, vi = ch.vertexIndex;
+                var verts = info.meshInfo[mi].vertices;
+                var cols  = info.meshInfo[mi].colors32;
+                float ct = t - i * stagger;
+                float yOff; byte a;
+                if (ct <= 0f) { yOff = dropH; a = 0; }
+                else { float k = Mathf.Clamp01(ct / fallDur); yOff = Mathf.LerpUnclamped(dropH, 0f, EaseOutBounce(k)); a = 255; }
+                for (int v = 0; v < 4; v++)
+                {
+                    verts[vi + v] += new Vector3(0f, yOff, 0f);
+                    var c = cols[vi + v]; c.a = a; cols[vi + v] = c;
+                }
+            }
+            for (int m = 0; m < info.meshInfo.Length; m++)
+            {
+                var mesh = info.meshInfo[m].mesh;
+                mesh.vertices = info.meshInfo[m].vertices;
+                mesh.colors32 = info.meshInfo[m].colors32;
+                txt.UpdateGeometry(mesh, m);
+            }
+        }
+
+        private static float EaseOutBounce(float x)
+        {
+            const float n1 = 7.5625f, d1 = 2.75f;
+            if (x < 1f / d1) return n1 * x * x;
+            else if (x < 2f / d1) { x -= 1.5f / d1; return n1 * x * x + 0.75f; }
+            else if (x < 2.5f / d1) { x -= 2.25f / d1; return n1 * x * x + 0.9375f; }
+            else { x -= 2.625f / d1; return n1 * x * x + 0.984375f; }
         }
 
         // ================= 2. 채팅 입력/응답 =================
@@ -477,7 +586,6 @@ namespace Persuasion.UI
                 yield return new WaitForSecondsRealtime(0.38f);
             }
         }
-
         private void FocusInput()
         {
             if (inputField == null || !inputField.interactable) return;
@@ -486,18 +594,149 @@ namespace Persuasion.UI
             _korBridge?.ShowOverlay();
         }
 
+        private void HandleEvidenceUnlocked(Persuasion.EvidenceData ev)
+        {
+            if (evidenceContainer == null)
+            {
+                var found = GameObject.Find("EvidenceContainer");
+                if (found != null) evidenceContainer = found.transform;
+            }
+
+            // 시스템 메시지 팝업 출력 (항상 출력)
+            AppendSystemMessage($"<color=#FFE373><b>[증거 획득]</b> {ev.evidenceName} : {ev.evidenceDescription}</color>");
+            AudioManager.Instance?.PlayButtonClick();
+
+            // 화면 중앙에 팝업 효과 추가
+            ShowEvidencePopup(ev.evidenceName);
+
+            if (evidenceContainer == null) return;
+            evidenceContainer.gameObject.SetActive(true);
+            
+            // 신규 증거물 UI 동적 생성
+            GameObject evObj = new GameObject("EvidenceItem");
+            evObj.transform.SetParent(evidenceContainer, false);
+            
+            var rt = evObj.AddComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(180f, 60f);
+
+            var bg = evObj.AddComponent<Image>();
+            bg.color = new Color(0.85f, 0.62f, 0.18f, 0.8f); // 획득 시 눈에 띄는 색상
+
+            var txtObj = new GameObject("Text");
+            txtObj.transform.SetParent(evObj.transform, false);
+            
+            var txtRt = txtObj.AddComponent<RectTransform>();
+            txtRt.anchorMin = Vector2.zero; txtRt.anchorMax = Vector2.one;
+            txtRt.sizeDelta = Vector2.zero;
+            txtRt.offsetMin = new Vector2(5, 5); txtRt.offsetMax = new Vector2(-5, -5);
+
+            var tmp = txtObj.AddComponent<TextMeshProUGUI>();
+            tmp.text = $"<size=12>EVIDENCE</size>\n<b>{ev.evidenceName}</b>";
+            tmp.fontSize = 16;
+            tmp.color = Color.black;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.lineSpacing = -10f;
+
+            // 효과음 재생
+            AudioManager.Instance?.PlayButtonClick();
+        }
+
+        private void AppendSystemMessage(string text)
+        {
+            AppendLog(false, text);
+        }
+
+        private void ShowEvidencePopup(string name)
+        {
+            var popup = new GameObject("EvidencePopup");
+            popup.transform.SetParent(this.transform, false);
+            var rt = popup.AddComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(400f, 100f);
+            rt.anchoredPosition = new Vector2(0, 150f);
+
+            var img = popup.AddComponent<Image>();
+            img.color = new Color(0.15f, 0.15f, 0.15f, 0.85f);
+            var outline = popup.AddComponent<Outline>();
+            outline.effectColor = new Color(0.85f, 0.62f, 0.18f, 1f);
+            outline.effectDistance = new Vector2(2, -2);
+            
+            var txtObj = new GameObject("Text");
+            txtObj.transform.SetParent(popup.transform, false);
+            var txtRt = txtObj.AddComponent<RectTransform>();
+            txtRt.anchorMin = Vector2.zero; txtRt.anchorMax = Vector2.one;
+            txtRt.sizeDelta = Vector2.zero;
+            
+            var tmp = txtObj.AddComponent<TextMeshProUGUI>();
+            tmp.text = $"<color=#FFE373>[새로운 증거 획득]</color>\n<b>{name}</b>";
+            tmp.fontSize = 24;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = Color.white;
+            
+            var cg = popup.AddComponent<CanvasGroup>();
+            StartCoroutine(AnimateEvidencePopup(popup, cg, rt));
+        }
+
+        private IEnumerator AnimateEvidencePopup(GameObject popup, CanvasGroup cg, RectTransform rt)
+        {
+            cg.alpha = 0f;
+            float t = 0;
+            // Fade in and move up slightly
+            while(t < 0.3f) { t += Time.unscaledDeltaTime; cg.alpha = t/0.3f; rt.anchoredPosition = new Vector2(0, 130f + 20f*(t/0.3f)); yield return null; }
+            yield return new WaitForSecondsRealtime(2.5f);
+            t = 0;
+            // Fade out
+            while(t < 0.4f) { t += Time.unscaledDeltaTime; cg.alpha = 1f - t/0.4f; yield return null; }
+            Destroy(popup);
+        }
+
+        private static string TranslateEmotion(string e)
+        {
+            if (string.IsNullOrEmpty(e)) return "무감정";
+            string lower = e.ToLower();
+            if (lower.Contains("anger") || lower.Contains("angry")) return "분노";
+            if (lower.Contains("disgust")) return "혐오";
+            if (lower.Contains("fear")) return "공포";
+            if (lower.Contains("sad")) return "슬픔";
+            if (lower.Contains("joy") || lower.Contains("happy")) return "기쁨";
+            if (lower.Contains("surprise")) return "놀람";
+            if (lower.Contains("confus")) return "혼란";
+            if (lower.Contains("panic") || lower.Contains("embarrass")) return "당황";
+            if (lower.Contains("bewilder")) return "황당함";
+            if (lower.Contains("calm") || lower.Contains("neutral")) return "평온함";
+            if (lower.Contains("anxious") || lower.Contains("nervous")) return "불안함";
+            return e; // fallback
+        }
+
         private void HandleNPCReplied(NPCResponse response)
         {
             CancelApiTimeout();
-            if (emotionLabel != null) emotionLabel.text = $"[ 심리 상태 : {response.emotion} ]";
+            int maxT = manager.Data?.maxTurns ?? 20;
+            bool isAI = (manager.CurrentStage?.stageId == "stage_ai_terminal" || manager.CurrentStage?.stageId == "stage_ai_core");
+            
+            if (emotionLabel != null) 
+            {
+                if (isAI)
+                    emotionLabel.text = $"[ 사용 턴 : {manager.TurnCount} / {maxT} | 심리 상태 : 불가(AI) ]";
+                else
+                    emotionLabel.text = $"[ 사용 턴 : {manager.TurnCount} / {maxT} | 심리 상태 : {TranslateEmotion(response.emotion)} ]";
+            }
+            
             persuasionSlider.value = manager.Persuasion;
             if (persuasionValueText != null) persuasionValueText.text = manager.Persuasion + "%";
 
             var sliderRt = persuasionSlider != null ? persuasionSlider.GetComponent<RectTransform>() : null;
             if (response.persuasionDelta < 0 && sliderRt != null)
+            {
                 StartCoroutine(ShakeRectTransform(sliderRt, 0.45f, 7f));
+                AudioManager.Instance?.PlayPersuasionDown();
+            }
             else if (response.persuasionDelta > 0 && sliderRt != null)
+            {
                 StartCoroutine(PulseSlider(sliderRt));
+                AudioManager.Instance?.PlayPersuasionUp();
+            }
 
             var stage = manager.CurrentStage;
             string npcName = stage != null ? stage.characterName : "용의자";
@@ -535,8 +774,11 @@ namespace Persuasion.UI
                 hintPanel.SetActive(false);
             }
 
-            SetSendingState(false);
-            FocusInput();
+            if (manager.Persuasion < 100)
+            {
+                SetSendingState(false);
+                FocusInput();
+            }
         }
 
         private void HandleError(string error)
@@ -594,7 +836,7 @@ namespace Persuasion.UI
             if (stage == null) return;
 
             // 🎯 자연스러운 수사 작전 지침 안내 메시지 전송
-            string directiveText = $"<b><color=#FFE082>[ 🎯 수사 작전 지침 ]</color> <color=#FFFFFF>{FormatActionDirective(stage.goal)}</color></b>";
+            string directiveText = $"<b><color=#FFE082>[ ◆ 수사 작전 지침 ]</color> <color=#FFFFFF>{FormatActionDirective(stage.goal)}</color></b>";
             AppendLog(false, directiveText);
             SpawnBubble(npcBubblePrefab, directiveText, typed: false);
 
@@ -712,6 +954,7 @@ namespace Persuasion.UI
 
         private readonly System.Collections.Generic.List<string> _currentStoryPages = new System.Collections.Generic.List<string>();
         private int _currentStoryPageIndex = 0;
+        private int _scenePageCount = 0; // 장면 내레이션 페이지 수 — 이후 인덱스는 캐릭터 초상화 표시
 
         private void OnClickStoryPeek()
         {
@@ -723,6 +966,13 @@ namespace Persuasion.UI
 
         private void OnStoryBeatContinue()
         {
+            // 나래이션 타이핑 중이면 먼저 전체를 즉시 표시(스킵)
+            if (_storyTyping)
+            {
+                CompleteStoryTyping();
+                return;
+            }
+
             if (_currentStoryPageIndex < _currentStoryPages.Count - 1)
             {
                 DisplayStoryPage(_currentStoryPageIndex + 1);
@@ -753,7 +1003,13 @@ namespace Persuasion.UI
         private void OpenMenu()
         {
             if (menuPanel == null) return;
-            if (volumeSlider != null) volumeSlider.value = AudioListener.volume;
+            var am = AudioManager.Instance;
+            if (am != null)
+            {
+                if (musicSlider != null) musicSlider.SetValueWithoutNotify(am.MusicVolume01);
+                if (sfxSlider   != null) sfxSlider.SetValueWithoutNotify(am.SfxVolume01);
+                if (voiceSlider != null) voiceSlider.SetValueWithoutNotify(am.VoiceVolume01);
+            }
             menuPanel.SetActive(true);
         }
 
@@ -802,12 +1058,23 @@ namespace Persuasion.UI
             if (stage == null) return;
 
             chapterTitleText.text = string.Empty;
-            stageTitleText.text = string.Empty;
+            int maxT = manager.Data?.maxTurns ?? 20;
+            if (stageTitleText != null) stageTitleText.text = $"제한 턴 : {maxT}턴";
             characterNameText.text = stage.characterName;
             backgroundNarrationText.text = stage.characterPersona;          // 4: 특징만 간단히
             if (goalText != null) goalText.text = "▶  수사 목표 : " + stage.goal;
             persuasionSlider.value = manager.Persuasion;
             if (persuasionValueText != null) persuasionValueText.text = manager.Persuasion + "%";
+            
+            bool isAI = (stage.stageId == "stage_ai_terminal" || stage.stageId == "stage_ai_core");
+            if (emotionLabel != null) 
+            {
+                if (isAI)
+                    emotionLabel.text = $"[ 사용 턴 : 0 / {maxT} | 심리 상태 : 불가(AI) ]";
+                else
+                    emotionLabel.text = $"[ 사용 턴 : 0 / {maxT} | 심리 상태 : 평온함 ]";
+            }
+            
             hintPanel.SetActive(false);
 
             // 새 스테이지 시작 → 대화/기록/대기상태 초기화 및 오버레이 닫기
@@ -845,7 +1112,11 @@ namespace Persuasion.UI
 
                 int index = i; // 클로저 캡처 방지
                 bool unlocked = manager.IsStageUnlocked(i);
-                btn.Setup(stage.chapterTitle, stage.stageTitle, thumb, unlocked, () => manager.StartStage(index));
+                btn.Setup(stage.chapterTitle, stage.stageTitle, thumb, unlocked, () =>
+                {
+                    AudioManager.Instance?.PlayButtonClick();
+                    manager.StartStage(index);
+                });
             }
         }
 
@@ -875,6 +1146,16 @@ namespace Persuasion.UI
                     break;
                 case GamePhase.Playing:
                     RefreshStageHeader();
+                    if (evidenceContainer != null)
+                    {
+                        // 증거 패널 초기화 (이전 스테이지 증거 삭제)
+                        foreach (Transform child in evidenceContainer)
+                        {
+                            Destroy(child.gameObject);
+                        }
+                        evidenceContainer.gameObject.SetActive(true);
+                    }
+
                     if (stageIntroOverlay != null && stageIntroGroup != null)
                     {
                         StartCoroutine(PlayStageIntroRoutine());
@@ -905,7 +1186,7 @@ namespace Persuasion.UI
                     if (resultGradeText       != null) resultGradeText.gameObject.SetActive(false);
                     if (resultStatsText       != null) resultStatsText.gameObject.SetActive(false);
                     if (resultPersonalBestText != null) resultPersonalBestText.gameObject.SetActive(false);
-                    if (resultBestMovePanel    != null) resultBestMovePanel.SetActive(false);
+                    if (resultBestMovePanel    != null) resultBestMovePanel.gameObject.SetActive(false);
                     if (shareButton            != null) shareButton.gameObject.SetActive(false);
                     if (openLeaderboardButton  != null) openLeaderboardButton.gameObject.SetActive(false);
                     if (resultNarrationText != null)
@@ -919,6 +1200,8 @@ namespace Persuasion.UI
                     nextButton.gameObject.SetActive(false);
                     retryButton.gameObject.SetActive(true);
                     ShowOnly(resultPanel);
+                    if (_clearCoroutine != null) StopCoroutine(_clearCoroutine);
+                    _clearCoroutine = StartCoroutine(FailImpactRoutine());
                     break;
                 case GamePhase.GameCompleted:
                     resultText.text  = "모든 상황 클리어!";
@@ -926,7 +1209,12 @@ namespace Persuasion.UI
                     if (resultGradeText        != null) resultGradeText.gameObject.SetActive(true);
                     if (resultStatsText        != null) resultStatsText.gameObject.SetActive(true);
                     if (resultPersonalBestText != null) resultPersonalBestText.gameObject.SetActive(false);
-                    if (resultNarrationText    != null) resultNarrationText.gameObject.SetActive(false);
+                    if (resultNarrationText    != null) 
+                    {
+                        resultNarrationText.gameObject.SetActive(true);
+                        resultNarrationText.text = "\n<size=120%><b>[ 제작진 ]</b></size>\n\n<b>기획자</b> : 이준\n<b>개발자</b> : 이정한\n\n플레이해주셔서 감사합니다!";
+                        resultNarrationText.alignment = TextAlignmentOptions.Center;
+                    }
                     if (resultStatsText != null)
                         resultStatsText.text = $"{manager.TurnCount}턴 완료  ·  전 상황 클리어";
                     if (resultGradeText != null) { resultGradeText.text = "★"; resultGradeText.color = s_Gold; }
@@ -1021,8 +1309,16 @@ namespace Persuasion.UI
             var stage = manager.CurrentStage;
             if (stage == null) return;
 
+            // 1-1(뺑소니) 도입 시작에 차 브레이크 소리
+            if (!manager.IsPeeking && manager.CurrentBeatKind == StoryBeatKind.StageIntro
+                && (stage.stageId == "stage_hitandrun" || manager.CurrentStageIndex == 0))
+            {
+                AudioManager.Instance?.PlayCarBrake();
+            }
+
             _currentStoryPages.Clear();
             _currentStoryPageIndex = 0;
+            _scenePageCount = 0;
 
             // 전환컷(StageTransition): 직전 스테이지의 전환 내레이션만 표시.
             // 배경 내레이션은 이어지는 도입컷(StageIntro)에서 표시하므로 여기서 중복 추가하지 않는다.
@@ -1055,16 +1351,17 @@ namespace Persuasion.UI
             }
             else
             {
-                // 도입컷(StageIntro): 스테이지 배경 내레이션(문단 단위 다중 페이지) 표시.
-                if (!string.IsNullOrEmpty(stage.backgroundNarration))
-                {
-                    string[] parts = stage.backgroundNarration.Split(new[] { "\n\n", "\r\n\r\n" }, System.StringSplitOptions.RemoveEmptyEntries);
-                    foreach (var p in parts)
-                    {
-                        if (!string.IsNullOrWhiteSpace(p))
-                            _currentStoryPages.Add(p.Trim());
-                    }
-                }
+                // 도입컷(StageIntro): 배경 내레이션을 문장 단위로 한 장씩 표시
+                foreach (var sent in SplitIntoSentences(stage.backgroundNarration))
+                    _currentStoryPages.Add(sent);
+            }
+
+            // 도입컷: 장면 페이지 이후 캐릭터 초상화 페이지 추가 (문장 단위)
+            if (manager.CurrentBeatKind != StoryBeatKind.StageTransition)
+            {
+                _scenePageCount = _currentStoryPages.Count;
+                foreach (var sent in SplitIntoSentences(stage.characterNarration))
+                    _currentStoryPages.Add(sent);
             }
 
             // 표시할 페이지가 하나도 없으면(전환/배경 내레이션 모두 비어있음) 다음 단계로 즉시 진행.
@@ -1088,9 +1385,18 @@ namespace Persuasion.UI
             {
                 bool isTransitionPage = manager.CurrentBeatKind == StoryBeatKind.StageTransition;
                 if (isTransitionPage)
+                {
                     sprite = transitionArtLibrary.GetTransition(manager.PendingTransitionFromStageId, stage.stageId, _currentStoryPageIndex);
+                }
+                else if (_scenePageCount > 0 && _currentStoryPageIndex >= _scenePageCount)
+                {
+                    // 캐릭터 소개 페이지 — 초상화 사용
+                    sprite = transitionArtLibrary.GetIntroCharacter(stage.stageId);
+                }
                 else
+                {
                     sprite = transitionArtLibrary.GetIntro(stage.stageId);
+                }
 
                 // 도입 일러스트가 없는 스테이지(예: 연쇄살인마)는 캐릭터 초상화로 폴백.
                 if (sprite == null && !isTransitionPage && portraitLibrary != null)
@@ -1119,23 +1425,118 @@ namespace Persuasion.UI
 
             if (storyBeatText != null)
             {
-                storyBeatText.text = _currentStoryPages[_currentStoryPageIndex];
+                StartStoryTyping(_currentStoryPages[_currentStoryPageIndex]);
             }
+
+            // 헤더 레이블 — 페이지 종류에 따라 전환
+            if (storyHeaderLabel != null)
+            {
+                bool isCharPage  = _scenePageCount > 0 && _currentStoryPageIndex >= _scenePageCount;
+                bool isTransPage = manager.CurrentBeatKind == StoryBeatKind.StageTransition;
+                storyHeaderLabel.text = isTransPage ? "◆  사건 경과"
+                                      : isCharPage  ? "◆  용의자 프로파일"
+                                                    : "◆  사건 현장";
+            }
+            // 페이지 인디케이터
+            if (storyPageIndicator != null)
+                storyPageIndicator.text = $"{_currentStoryPageIndex + 1} / {_currentStoryPages.Count}";
+            // 케이스 번호
+            if (storyCaseLabel != null && stage != null)
+                storyCaseLabel.text = $"CASE #{stage.stageOrder + 1:D3}";
 
             bool isLastPage = (_currentStoryPageIndex == _currentStoryPages.Count - 1);
             if (manager.IsPeeking)
             {
-                SetStoryContinueLabel(isLastPage ? "닫기" : "다음 컷 ▶");
+                SetStoryContinueLabel(isLastPage ? "닫기" : "다음 ▶");
             }
             else if (manager.CurrentBeatKind == StoryBeatKind.StageTransition)
             {
-                // 전환컷 다음엔 새 스테이지 도입컷이 이어지므로 마지막 페이지도 "다음 컷".
-                SetStoryContinueLabel("다음 컷 ▶");
+                SetStoryContinueLabel("다음 ▶");
             }
             else
             {
-                SetStoryContinueLabel(isLastPage ? "수사 시작 ▶" : "다음 컷 ▶");
+                SetStoryContinueLabel(isLastPage ? "수사 시작 ▶" : "다음 ▶");
             }
+        }
+
+        // ================= 스토리 나래이션 타자기 효과 =================
+
+        /// <summary>나래이션을 한 글자씩 출력(타자기). 출력 동안 키보드 타이핑 소리 재생.</summary>
+        private void StartStoryTyping(string full)
+        {
+            if (storyBeatText == null) return;
+            if (_storyTypeRoutine != null) StopCoroutine(_storyTypeRoutine);
+            _storyTypeRoutine = StartCoroutine(StoryTypeRoutine(full ?? string.Empty));
+        }
+
+        private IEnumerator StoryTypeRoutine(string full)
+        {
+            _storyTyping = true;
+            storyBeatText.text = full;
+            storyBeatText.ForceMeshUpdate();
+            int total = storyBeatText.textInfo.characterCount;
+            storyBeatText.maxVisibleCharacters = 0;
+
+            var audio = AudioManager.Instance;
+            if (audio != null) audio.StartTypingSound();
+
+            int shown = 0;
+            while (shown <= total)
+            {
+                storyBeatText.maxVisibleCharacters = shown;
+                shown++;
+                yield return new WaitForSecondsRealtime(0.035f);
+            }
+
+            storyBeatText.maxVisibleCharacters = int.MaxValue;
+            if (audio != null) audio.StopTypingSound();
+            _storyTyping = false;
+            _storyTypeRoutine = null;
+        }
+
+        /// <summary>긴 문단을 문장 단위로 maxChars 이하 페이지로 분할.</summary>
+        private static System.Collections.Generic.List<string> SplitIntoPages(string text, int maxChars)
+        {
+            var pages = new System.Collections.Generic.List<string>();
+            var sentences = System.Text.RegularExpressions.Regex.Split(text.Trim(), @"(?<=[.!?…。])\s+");
+            var buf = new System.Text.StringBuilder();
+            foreach (var s in sentences)
+            {
+                if (buf.Length > 0 && buf.Length + s.Length + 1 > maxChars)
+                {
+                    pages.Add(buf.ToString().Trim());
+                    buf.Clear();
+                }
+                if (buf.Length > 0) buf.Append(' ');
+                buf.Append(s);
+            }
+            if (buf.Length > 0) pages.Add(buf.ToString().Trim());
+            return pages;
+        }
+
+        /// <summary>
+        /// 내레이션 텍스트를 문장 단위로 분리. 마침표/느낌표/물음표 뒤 공백이나 줄바꿈으로 컷.
+        /// </summary>
+        private static System.Collections.Generic.IEnumerable<string> SplitIntoSentences(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) yield break;
+            var sentences = System.Text.RegularExpressions.Regex.Split(
+                text.Trim(), @"(?<=[.!?…。])\s+");
+            foreach (var s in sentences)
+            {
+                var t = s.Trim();
+                if (!string.IsNullOrWhiteSpace(t)) yield return t;
+            }
+        }
+
+        /// <summary>타이핑 중 클릭 시 전체 즉시 표시(스킵).</summary>
+        private void CompleteStoryTyping()
+        {
+            if (_storyTypeRoutine != null) { StopCoroutine(_storyTypeRoutine); _storyTypeRoutine = null; }
+            if (storyBeatText != null) storyBeatText.maxVisibleCharacters = int.MaxValue;
+            var audio = AudioManager.Instance;
+            if (audio != null) audio.StopTypingSound();
+            _storyTyping = false;
         }
 
         /// <summary>
@@ -1198,6 +1599,8 @@ namespace Persuasion.UI
             nextButton.gameObject.SetActive(true);
             retryButton.gameObject.SetActive(false);
 
+            AudioManager.Instance?.PlayClearStinger();
+
             if (_clearCoroutine != null) StopCoroutine(_clearCoroutine);
             _clearCoroutine = StartCoroutine(ClearCelebrationRoutine());
         }
@@ -1250,6 +1653,34 @@ namespace Persuasion.UI
                 while (t < 0.4f) { t += Time.unscaledDeltaTime; cg.alpha = t / 0.4f; yield return null; }
                 cg.alpha = 1f;
             }
+            _clearCoroutine = null;
+        }
+
+        /// <summary>
+        /// 심문 실패 순간의 임팩트 연출: 붉은 플래시 + 결과 패널 흔들림 + 실패 스팅어.
+        /// 클리어 연출(ClearCelebrationRoutine)과 대칭되는 부정적 버전.
+        /// </summary>
+        private IEnumerator FailImpactRoutine()
+        {
+            AudioManager.Instance?.PlayFailStinger();
+
+            // 1. 붉은 화면 플래시 (클리어의 흰색 플래시와 대비되는 톤)
+            if (clearFlashOverlay != null)
+            {
+                clearFlashOverlay.gameObject.SetActive(true);
+                var flashColor = new Color(0.55f, 0.06f, 0.06f, 1f);
+                float t = 0f;
+                while (t < 0.10f) { t += Time.unscaledDeltaTime; clearFlashOverlay.color = new Color(flashColor.r, flashColor.g, flashColor.b, Mathf.Lerp(0f, 0.55f, t / 0.10f)); yield return null; }
+                t = 0f;
+                while (t < 0.35f) { t += Time.unscaledDeltaTime; clearFlashOverlay.color = new Color(flashColor.r, flashColor.g, flashColor.b, Mathf.Lerp(0.55f, 0f, t / 0.35f)); yield return null; }
+                clearFlashOverlay.gameObject.SetActive(false);
+            }
+
+            // 2. 결과 패널 전체가 둔탁하게 흔들림 (클리어의 경쾌한 팝인과 대비)
+            var panelRt = resultPanel != null ? resultPanel.GetComponent<RectTransform>() : null;
+            if (panelRt != null)
+                yield return StartCoroutine(ShakeRectTransform(panelRt, 0.35f, 10f));
+
             _clearCoroutine = null;
         }
 
@@ -1312,7 +1743,15 @@ namespace Persuasion.UI
         private void OnClickPrivacy()
         {
             // 현재 페이지와 같은 디렉터리 기준 상대 경로 (하위 경로 배포에서도 동작)
-            Application.OpenURL("privacy.html");
+            // Application.OpenURL("privacy.html");
+            if (manager != null && manager.CurrentPhase == GamePhase.Playing)
+            {
+                AppendSystemMessage("<color=#FFCD5A>개인정보처리방침은 정식 배포 시 활성화될 예정입니다.</color>");
+            }
+            else
+            {
+                Debug.Log("개인정보처리방침 링크 클릭됨 (현재 준비 중)");
+            }
         }
 
         // ================= 7. 글로벌 리더보드 =================
@@ -1436,6 +1875,9 @@ namespace Persuasion.UI
             if (audio != null) audio.StopCharacterVoice();
 
             if (panel != playPanel) _korBridge?.HideOverlay();
+
+            // 스토리 화면을 벗어나면 나래이션 타이핑/소리 정리
+            if (panel != storyBeatPanel && _storyTyping) CompleteStoryTyping();
 
             introPanel.SetActive(panel == introPanel);
             if (stageSelectPanel != null) stageSelectPanel.SetActive(panel == stageSelectPanel);

@@ -24,6 +24,11 @@ namespace Persuasion.EditorTools
         private const string LibraryPath           = "Assets/Data/StagePortraitLibrary.asset";
         private const string TransitionLibraryPath = "Assets/Data/TransitionArtLibrary.asset";
 
+        // ── Dossier(수사 서류) 리얼리즘 에셋 ──────────────────────
+        private const string DossierPaperPath       = "Assets/Art/Textures/dossier_paper_background.png";
+        private const string DossierGrainPath       = "Assets/Art/UI/Dossier/paper_grain.png";
+        private const string DossierStampBorderPath = "Assets/Art/UI/Dossier/stamp_border.png";
+
         private static TMP_FontAsset _font;
 
         // ── Design Tokens ─── 기밀문서 / 심문 테마 ─────────────────────
@@ -221,35 +226,39 @@ namespace Persuasion.EditorTools
             var topHeaderGO = new GameObject("TopHeaderBar", typeof(RectTransform));
             // 게임 시작 아래 '설정 | 종료' 나란히 (레퍼런스 배치)
             var introMenuBtn = MkButton("IntroMenuButton", introPanel.transform, "설정", out var introMenuLbl);
-            AnchorBox(introMenuBtn.GetComponent<RectTransform>(), new Vector2(0.42f, 0.18f), new Vector2(180f, 60f));
-            introMenuBtn.GetComponent<Image>().color = new Color(0.05f, 0.05f, 0.05f, 0.75f);
+            AnchorBox(introMenuBtn.GetComponent<RectTransform>(), new Vector2(0.42f, 0.18f), new Vector2(180f, 56f));
+            introMenuBtn.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.14f, 0.85f);
             if (introMenuBtn.transform.Find("Border") != null) {
                 var bdr = introMenuBtn.transform.Find("Border").GetComponent<Image>();
-                bdr.color = new Color(0.6f, 0.6f, 0.6f, 0.8f);
+                bdr.color = new Color(1f, 1f, 1f, 0.15f);
                 var bdrRt = bdr.GetComponent<RectTransform>();
-                bdrRt.offsetMin = new Vector2(-2, -2); bdrRt.offsetMax = new Vector2(2, 2);
+                bdrRt.offsetMin = new Vector2(-1.5f, -1.5f); bdrRt.offsetMax = new Vector2(1.5f, 1.5f);
             }
-            introMenuLbl.fontSize = 26; introMenuLbl.color = new Color(0.8f, 0.8f, 0.8f, 1f);
+            introMenuLbl.fontSize = 22; 
+            introMenuLbl.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+            introMenuLbl.characterSpacing = 2f;
 
             var introQuitBtn = MkButton("IntroQuitButton", introPanel.transform, "종료", out var introQuitLbl);
-            AnchorBox(introQuitBtn.GetComponent<RectTransform>(), new Vector2(0.58f, 0.18f), new Vector2(180f, 60f));
-            introQuitBtn.GetComponent<Image>().color = new Color(0.05f, 0.05f, 0.05f, 0.75f);
+            AnchorBox(introQuitBtn.GetComponent<RectTransform>(), new Vector2(0.58f, 0.18f), new Vector2(180f, 56f));
+            introQuitBtn.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.14f, 0.85f);
             if (introQuitBtn.transform.Find("Border") != null) {
                 var bdr = introQuitBtn.transform.Find("Border").GetComponent<Image>();
-                bdr.color = new Color(0.6f, 0.6f, 0.6f, 0.8f);
+                bdr.color = new Color(1f, 1f, 1f, 0.15f);
                 var bdrRt = bdr.GetComponent<RectTransform>();
-                bdrRt.offsetMin = new Vector2(-2, -2); bdrRt.offsetMax = new Vector2(2, 2);
+                bdrRt.offsetMin = new Vector2(-1.5f, -1.5f); bdrRt.offsetMax = new Vector2(1.5f, 1.5f);
             }
-            introQuitLbl.fontSize = 26; introQuitLbl.color = new Color(0.8f, 0.8f, 0.8f, 1f);
+            introQuitLbl.fontSize = 22; 
+            introQuitLbl.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+            introQuitLbl.characterSpacing = 2f;
 
             var titleGroupGO = new GameObject("TitleGroup", typeof(RectTransform), typeof(CanvasGroup));
             titleGroupGO.transform.SetParent(introPanel.transform, false);
             AnchorBox(titleGroupGO.GetComponent<RectTransform>(), new Vector2(0.5f, 0.75f), new Vector2(1600, 180));
             var introTitleGroup = titleGroupGO.GetComponent<CanvasGroup>();
 
-            var titleShadow = MkText("TitleShadow", titleGroupGO.transform, 120, TextAlignmentOptions.Center, new Color(0, 0, 0, 0.85f));
+            var titleShadow = MkText("TitleShadow", titleGroupGO.transform, 120, TextAlignmentOptions.Center, new Color(0, 0, 0, 0.35f));
             AnchorBox(titleShadow.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(1500, 160));
-            titleShadow.rectTransform.anchoredPosition = new Vector2(4, -7);
+            titleShadow.rectTransform.anchoredPosition = new Vector2(3, -4);
             titleShadow.fontStyle = FontStyles.Bold;
             titleShadow.characterSpacing = 6f;
             titleShadow.text = gameData.gameTitle;
@@ -261,8 +270,8 @@ namespace Persuasion.EditorTools
             titleText.text = gameData.gameTitle;
 
             // 타이틀 아래 붉은색 포인트 라인 (레퍼런스 느낌)
-            var titleLine = MkPanel("TitleLine", titleGroupGO.transform, new Color(0.85f, 0.12f, 0.14f, 0.95f), false);
-            AnchorBox(titleLine.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(500, 5));
+            var titleLine = MkPanel("TitleLine", titleGroupGO.transform, new Color(0.88f, 0.22f, 0.15f, 0.95f), false);
+            AnchorBox(titleLine.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(500, 3));
             titleLine.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -68);
 
             var subtitle = MkText("Subtitle", titleGroupGO.transform, 38, TextAlignmentOptions.Center, Color.white);
@@ -274,19 +283,19 @@ namespace Persuasion.EditorTools
 
             var startBtn = MkButton("StartButton", introPanel.transform, "게임 시작", out var startBtnText);
             AnchorBox(startBtn.GetComponent<RectTransform>(), new Vector2(0.5f, 0.32f), new Vector2(430, 92));
-            startBtn.GetComponent<Image>().color = new Color(0.05f, 0.05f, 0.05f, 0.75f);
+            startBtn.GetComponent<Image>().color = new Color(0.88f, 0.22f, 0.15f, 0.95f); // 세련된 레드오렌지
             var startBorder = startBtn.transform.Find("Border");
             if (startBorder != null)
             {
                 var sbImg = startBorder.GetComponent<Image>();
-                sbImg.color = new Color(0.95f, 0.35f, 0.15f, 1f);   // 레드오렌지 아웃라인
+                sbImg.color = new Color(1f, 1f, 1f, 0.15f);   // 미묘한 화이트 하이라이트 테두리
                 var sbRt = startBorder.GetComponent<RectTransform>();
-                sbRt.offsetMin = new Vector2(-3f, -3f); sbRt.offsetMax = new Vector2(3f, 3f);
+                sbRt.offsetMin = new Vector2(-1.5f, -1.5f); sbRt.offsetMax = new Vector2(1.5f, 1.5f);
             }
             startBtnText.fontSize = 42;
             startBtnText.fontStyle = FontStyles.Bold;
-            startBtnText.characterSpacing = 4f;
-            startBtnText.color = new Color(0.95f, 0.35f, 0.15f, 1f);
+            startBtnText.characterSpacing = 6f;
+            startBtnText.color = Color.white; // 가독성을 위한 화이트 텍스트
 
 
 
@@ -383,41 +392,28 @@ namespace Persuasion.EditorTools
             var elOutline = emotionLabel.gameObject.AddComponent<Outline>();
             elOutline.effectColor = new Color(0.01f, 0.01f, 0.02f, 0.95f);
 
-            // ── 컨트롤 버튼 뒤 반투명 배경 스트립 (심문실 제어판 느낌) ──
-            {
-                var ctrlBg = new GameObject("CtrlBackground", typeof(RectTransform), typeof(Image));
-                ctrlBg.transform.SetParent(playPanel.transform, false);
-                var cbRt = ctrlBg.GetComponent<RectTransform>();
-                cbRt.anchorMin = new Vector2(1, 1); cbRt.anchorMax = new Vector2(1, 1); cbRt.pivot = new Vector2(1, 1);
-                cbRt.sizeDelta = new Vector2(570f, 54f); cbRt.anchoredPosition = new Vector2(-SAFE + 8f, -96f);
-                ctrlBg.GetComponent<Image>().color = new Color(0.02f, 0.01f, 0.03f, 0.68f);
-                ctrlBg.GetComponent<Image>().raycastTarget = false;
-                // 좌측 얇은 ACCENT 세로선
-                var cbLine = new GameObject("AccentLine", typeof(RectTransform), typeof(Image));
-                cbLine.transform.SetParent(ctrlBg.transform, false);
-                var clRt = cbLine.GetComponent<RectTransform>();
-                clRt.anchorMin = new Vector2(0, 0); clRt.anchorMax = new Vector2(0, 1);
-                clRt.pivot = new Vector2(0, 0.5f); clRt.sizeDelta = new Vector2(3, 0); clRt.anchoredPosition = Vector2.zero;
-                cbLine.GetComponent<Image>().color = ACCENT;
-                cbLine.GetComponent<Image>().raycastTarget = false;
-            }
-
+            // ── 컨트롤 버튼 (미니멀하고 세련된 플로팅 캡슐 디자인) ──
             var ctrlRow = new GameObject("PlayControls", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(ContentSizeFitter));
             ctrlRow.transform.SetParent(playPanel.transform, false);
             var ctrlRt = ctrlRow.GetComponent<RectTransform>();
             ctrlRt.anchorMin = new Vector2(1, 1); ctrlRt.anchorMax = new Vector2(1, 1); ctrlRt.pivot = new Vector2(1, 1);
-            ctrlRt.anchoredPosition = new Vector2(-SAFE, -100f);
+            ctrlRt.anchoredPosition = new Vector2(-SAFE - 24f, -90f); // 여백 확보
             var ctrlHlg = ctrlRow.GetComponent<HorizontalLayoutGroup>();
-            ctrlHlg.spacing = SP_XS; ctrlHlg.childAlignment = TextAnchor.MiddleRight;
+            ctrlHlg.spacing = 16f; ctrlHlg.childAlignment = TextAnchor.MiddleRight;
             ctrlHlg.childControlWidth = true; ctrlHlg.childControlHeight = true;
             ctrlHlg.childForceExpandWidth = false; ctrlHlg.childForceExpandHeight = false;
             ctrlRow.GetComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             ctrlRow.GetComponent<ContentSizeFitter>().verticalFit   = ContentSizeFitter.FitMode.PreferredSize;
 
-            var storyPeekBtn = MkBarButton("StoryPeekButton", ctrlRow.transform, "▶ 스토리",   142f, COL_NEUTRAL);
-            var traitBtn     = MkBarButton("TraitButton",     ctrlRow.transform, "■ 수사 파일", 138f, ACCENT);
-            var historyBtn   = MkBarButton("HistoryButton",   ctrlRow.transform, "▶ 대화기록",  138f, COL_NEUTRAL);
-            var menuBtn      = MkBarButton("MenuButton",      ctrlRow.transform, "▶ 메뉴",      112f, COL_NEUTRAL);
+            // 미니멀 프리미엄 컬러: 다크 그레이 반투명, 포인트는 딥 레드
+            Color sleekBtn = new Color(0.05f, 0.05f, 0.06f, 0.6f);
+            Color sleekAccent = new Color(0.7f, 0.15f, 0.15f, 0.8f);
+
+            // 아이콘 없이 깔끔한 텍스트 캡슐로만 구성
+            var storyPeekBtn = MkBarButton("StoryPeekButton", ctrlRow.transform, "스토리",       100f, sleekBtn);
+            var traitBtn     = MkBarButton("TraitButton",     ctrlRow.transform, "수사 파일",    120f, sleekAccent);
+            var historyBtn   = MkBarButton("HistoryButton",   ctrlRow.transform, "대화 기록",    120f, sleekBtn);
+            var menuBtn      = MkBarButton("MenuButton",      ctrlRow.transform, "설 정",        80f, sleekBtn);
 
             // 숨김 처리용 narrationText (PersuasionUI 바인딩 유지)
             var narrationText = MkText("CharacterTrait", playPanel.transform, 1, TextAlignmentOptions.TopLeft, new Color(0, 0, 0, 0));
@@ -449,14 +445,22 @@ namespace Persuasion.EditorTools
             scrollRect.viewport = viewportGO.GetComponent<RectTransform>();
             scrollRect.content  = contentRt;
 
-            var hintPanel = MkPanel("HintPanel", playPanel.transform, new Color(0.24f, 0.16f, 0.04f, 0.90f), false);
+            var hintPanel = MkPanel("HintPanel", playPanel.transform, new Color(0.04f, 0.04f, 0.06f, 0.7f), false);
             var hintRt = hintPanel.GetComponent<RectTransform>();
-            hintRt.anchorMin = new Vector2(0, 0); hintRt.anchorMax = new Vector2(1, 0); hintRt.pivot = new Vector2(0.5f, 0);
-            hintRt.sizeDelta = new Vector2(-120f, 48f); hintRt.anchoredPosition = new Vector2(0, 306f);
+            hintRt.anchorMin = new Vector2(0.5f, 0); hintRt.anchorMax = new Vector2(0.5f, 0); hintRt.pivot = new Vector2(0.5f, 0);
+            hintRt.sizeDelta = new Vector2(600f, 44f); hintRt.anchoredPosition = new Vector2(0, 320f);
+            
+            var hintImg = hintPanel.GetComponent<Image>();
+            Round(hintImg, 22f); // 캡슐 모양 둥근 모서리
 
-            var hintText = MkText("HintText", hintPanel.transform, TYPE_SMALL, TextAlignmentOptions.Left, TXT_GOLD);
-            Full(hintText.rectTransform); hintText.margin = new Vector4(SP_MD, SP_XS, SP_MD, SP_XS);
+            var hintOutln = hintPanel.AddComponent<Outline>();
+            hintOutln.effectColor = new Color(0.85f, 0.62f, 0.18f, 0.5f); // 은은한 골드빛 아웃라인
+            hintOutln.effectDistance = new Vector2(1f, -1f);
+
+            var hintText = MkText("HintText", hintPanel.transform, 16, TextAlignmentOptions.Center, TXT_GOLD);
+            Full(hintText.rectTransform);
             hintText.fontStyle = FontStyles.Bold;
+            hintText.margin = new Vector4(0, 2f, 0, 0); // 텍스트 수직 중앙 정렬 미세조정
 
             // 1인칭 영화풍 수사관 대화 입력 (Invisible Direct Seamless Input)
             var inputContainer = MkPanel("InputContainer", playPanel.transform, new Color(0f, 0f, 0f, 0f), false);
@@ -491,6 +495,23 @@ namespace Persuasion.EditorTools
             sendLbl.fontSize = 18;
             sendLbl.fontStyle = FontStyles.Bold;
             BtnColor(sendBtn, new Color(0.85f, 0.62f, 0.18f, 0.40f));
+
+            // ════════════════════════════════════════════════
+            // EVIDENCE BAR (하단 증거 획득 인벤토리)
+            // ════════════════════════════════════════════════
+            var evidenceContainer = MkPanel("EvidenceContainer", playPanel.transform, new Color(0f, 0f, 0f, 0f), false);
+            var evContRt = evidenceContainer.GetComponent<RectTransform>();
+            evContRt.anchorMin = new Vector2(0, 0); evContRt.anchorMax = new Vector2(1, 0); evContRt.pivot = new Vector2(0.5f, 0);
+            evContRt.sizeDelta = new Vector2(-120f, 80f); evContRt.anchoredPosition = new Vector2(0, 100f);
+            
+            var evLayout = evidenceContainer.AddComponent<HorizontalLayoutGroup>();
+            evLayout.padding = new RectOffset(16, 16, 8, 8);
+            evLayout.spacing = 16f;
+            evLayout.childAlignment = TextAnchor.MiddleLeft;
+            evLayout.childControlWidth = false;
+            evLayout.childControlHeight = true;
+            evLayout.childForceExpandWidth = false;
+            evLayout.childForceExpandHeight = false;
 
             // ════════════════════════════════════════════════
             // STAGE INTRO OVERLAY (단계 및 수사 목표 팝업 연출 오버레이)
@@ -646,41 +667,101 @@ namespace Persuasion.EditorTools
             storyBeatImage.enabled        = false;
 
             var storyFitter = storyBeatImgGO.GetComponent<AspectRatioFitter>();
-            storyFitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+            storyFitter.aspectMode = AspectRatioFitter.AspectMode.None; // 런타임 DisplayStoryPage에서 EnvelopeParent로 설정
             storyFitter.aspectRatio = 16f / 9f;
 
-            // 2. 박스 티 전혀 안 나는 시네마틱 심리스 심플 타이포그래피 (Seamless Subtitle Overlay)
+            // 2. 하단 그라데이션 오버레이 (텍스트 가독성) — 더 깊게
+            var storyBotOverlay = new GameObject("StoryBottomOverlay", typeof(RectTransform));
+            storyBotOverlay.transform.SetParent(storyBeatPanel.transform, false);
+            var sboRt = storyBotOverlay.GetComponent<RectTransform>();
+            sboRt.anchorMin = Vector2.zero; sboRt.anchorMax = new Vector2(1f, 0.65f);
+            sboRt.offsetMin = Vector2.zero; sboRt.offsetMax = Vector2.zero;
+            var sboGrad = storyBotOverlay.AddComponent<UIVerticalGradient>();
+            sboGrad.topColor    = new Color(0f, 0f, 0f, 0f);
+            sboGrad.bottomColor = new Color(0.01f, 0.01f, 0.03f, 0.97f);
+            sboGrad.raycastTarget = false;
+
+            // 2b. 상단 그라데이션 (레터박스 아래로 자연스럽게)
+            var storyTopOverlay = new GameObject("StoryTopOverlay", typeof(RectTransform));
+            storyTopOverlay.transform.SetParent(storyBeatPanel.transform, false);
+            var stoRt = storyTopOverlay.GetComponent<RectTransform>();
+            stoRt.anchorMin = new Vector2(0f, 0.72f); stoRt.anchorMax = Vector2.one;
+            stoRt.offsetMin = Vector2.zero; stoRt.offsetMax = Vector2.zero;
+            var stoGrad = storyTopOverlay.AddComponent<UIVerticalGradient>();
+            stoGrad.topColor    = new Color(0.01f, 0.01f, 0.03f, 0.88f);
+            stoGrad.bottomColor = new Color(0f, 0f, 0f, 0f);
+            stoGrad.raycastTarget = false;
+
+            // 3. 텍스트 영역 — 하단 전체 가로, 버튼 공간 확보
             var storyTextBackGO = MkPanel("TextBacking", storyBeatPanel.transform, new Color(0f, 0f, 0f, 0f), false);
             var stbRt = storyTextBackGO.GetComponent<RectTransform>();
-            AnchorBox(stbRt, new Vector2(0.5f, 0.26f), new Vector2(1000, 220));
+            stbRt.anchorMin = new Vector2(0f, 0f); stbRt.anchorMax = new Vector2(1f, 0f);
+            stbRt.pivot = new Vector2(0.5f, 0f);
+            stbRt.sizeDelta = new Vector2(0f, 340f);
+            stbRt.anchoredPosition = new Vector2(0f, 68f);
 
-            // 헤더 뱃지 (박스 없이 깔끔한 금빛 타이포)
-            var storyHeader = MkText("StoryHeader", storyTextBackGO.transform, 17, TextAlignmentOptions.Center, TXT_GOLD);
-            AnchorTopLeft(storyHeader.rectTransform, new Vector2(0, 0), new Vector2(1000, 28));
+            // 황금 구분선 (텍스트 영역 상단)
+            var storyDivider = MkPanel("StoryDivider", storyTextBackGO.transform, TXT_GOLD, false);
+            {
+                var rt = storyDivider.GetComponent<RectTransform>();
+                rt.anchorMin = new Vector2(0.08f, 1f); rt.anchorMax = new Vector2(0.92f, 1f);
+                rt.pivot = new Vector2(0.5f, 1f); rt.sizeDelta = new Vector2(0f, 1f); rt.anchoredPosition = Vector2.zero;
+                storyDivider.GetComponent<Image>().color = new Color(TXT_GOLD.r, TXT_GOLD.g, TXT_GOLD.b, 0.55f);
+            }
+
+            // 헤더 뱃지 — 동적 (씬 / 캐릭터 / 전환 구분)
+            var storyHeader = MkText("StoryHeader", storyTextBackGO.transform, 14, TextAlignmentOptions.Left, TXT_GOLD);
+            AnchorTopLeft(storyHeader.rectTransform, new Vector2(80f, -10f), new Vector2(700f, 26f));
             storyHeader.fontStyle = FontStyles.Bold;
-            storyHeader.characterSpacing = 2f;
-            storyHeader.text = "■  [ 사건 개요 | CASE NARRATIVE ]  ■";
+            storyHeader.characterSpacing = 3f;
+            storyHeader.text = "◆  사건 현장";
 
-            // 배경과 완전히 하나로 어우러지는 24pt 프리미엄 시네마틱 자막 (3.5px 딥 블랙 섀도우)
-            var storyBeatText = MkText("StoryBeatText", storyTextBackGO.transform, 24, TextAlignmentOptions.Center, new Color(0.99f, 0.99f, 0.98f, 1.0f));
+            // 페이지 인디케이터 (우측)
+            var storyPageIndicator = MkText("StoryPageIndicator", storyTextBackGO.transform, 13, TextAlignmentOptions.Right, TXT_SECONDARY);
+            AnchorTopRight(storyPageIndicator.rectTransform, new Vector2(-80f, -11f), new Vector2(200f, 22f));
+            storyPageIndicator.characterSpacing = 2f;
+            storyPageIndicator.text = "1 / 1";
+
+            // 스토리 본문 텍스트 — 한 문장씩, 크게
+            var storyBeatText = MkText("StoryBeatText", storyTextBackGO.transform, 30, TextAlignmentOptions.Center, new Color(0.99f, 0.99f, 0.98f, 1.0f));
             var sbtRt = storyBeatText.rectTransform;
             sbtRt.anchorMin = Vector2.zero; sbtRt.anchorMax = Vector2.one;
-            sbtRt.offsetMin = new Vector2(0, 56); sbtRt.offsetMax = new Vector2(0, -32);
+            sbtRt.offsetMin = new Vector2(120f, 10f); sbtRt.offsetMax = new Vector2(-120f, -42f);
             storyBeatText.fontStyle = FontStyles.Bold;
-            storyBeatText.lineSpacing = 12f;
+            storyBeatText.lineSpacing = 18f;
             storyBeatText.enableWordWrapping = true;
             storyBeatText.overflowMode = TextOverflowModes.Overflow;
 
             var sbtOutline = storyBeatText.gameObject.AddComponent<Outline>();
-            sbtOutline.effectColor = new Color(0.01f, 0.01f, 0.02f, 0.98f);
-            sbtOutline.effectDistance = new Vector2(3.5f, -3.5f);
+            sbtOutline.effectColor = new Color(0f, 0f, 0f, 0.98f);
+            sbtOutline.effectDistance = new Vector2(3f, -3f);
 
-            // 심리스 조작 버튼 (하단 중앙 플로팅 버튼)
-            var storyBeatContinueBtn = MkButton("StoryBeatContinueButton", storyTextBackGO.transform, "다음 컷 ▶", out var sbBtnLbl);
+            // 4. 상단 레터박스 바 (시네마틱)
+            var storyTopBar = MkPanel("StoryTopBar", storyBeatPanel.transform, new Color(0f, 0f, 0f, 0.85f), false);
+            {
+                var rt = storyTopBar.GetComponent<RectTransform>();
+                rt.anchorMin = new Vector2(0f, 1f); rt.anchorMax = Vector2.one;
+                rt.pivot = new Vector2(0.5f, 1f); rt.sizeDelta = new Vector2(0f, 72f); rt.anchoredPosition = Vector2.zero;
+            }
+            // 뱃지 레이블 (좌)
+            var storyBadgeLabel = MkText("StoryBadgeLabel", storyTopBar.transform, 13, TextAlignmentOptions.Left, TXT_SECONDARY);
+            AnchorTopLeft(storyBadgeLabel.rectTransform, new Vector2(48f, -24f), new Vector2(600f, 24f));
+            storyBadgeLabel.characterSpacing = 2f;
+            storyBadgeLabel.text = "☆  형사과 · DETECTIVE DIVISION";
+
+            // 케이스 번호 (우, 동적)
+            var storyCaseLabel = MkText("StoreCaseLabel", storyTopBar.transform, 13, TextAlignmentOptions.Right, TXT_GOLD);
+            AnchorTopRight(storyCaseLabel.rectTransform, new Vector2(-48f, -24f), new Vector2(240f, 24f));
+            storyCaseLabel.fontStyle = FontStyles.Bold;
+            storyCaseLabel.characterSpacing = 2f;
+            storyCaseLabel.text = "CASE #001";
+
+            // 다음 컷 버튼 — 화면 하단 고정
+            var storyBeatContinueBtn = MkButton("StoryBeatContinueButton", storyBeatPanel.transform, "다음 ▶", out var sbBtnLbl);
             var sbBtnRt = storyBeatContinueBtn.GetComponent<RectTransform>();
-            sbBtnRt.anchorMin = new Vector2(0.5f, 0); sbBtnRt.anchorMax = new Vector2(0.5f, 0); sbBtnRt.pivot = new Vector2(0.5f, 0);
-            sbBtnRt.sizeDelta = new Vector2(200, 46); sbBtnRt.anchoredPosition = new Vector2(0, 0);
-            sbBtnLbl.fontSize = 18;
+            sbBtnRt.anchorMin = new Vector2(0.5f, 0f); sbBtnRt.anchorMax = new Vector2(0.5f, 0f); sbBtnRt.pivot = new Vector2(0.5f, 0f);
+            sbBtnRt.sizeDelta = new Vector2(200f, 50f); sbBtnRt.anchoredPosition = new Vector2(0f, 10f);
+            sbBtnLbl.fontSize = 17;
             sbBtnLbl.fontStyle = FontStyles.Bold;
             BtnColor(storyBeatContinueBtn, ACCENT);
 
@@ -799,140 +880,183 @@ namespace Persuasion.EditorTools
             BtnColor(menuCloseBtn, COL_NEUTRAL);
 
             // ════════════════════════════════════════════════
-            // GAME GUIDE PANEL (수사 지침서 팝업)
+            // GAME GUIDE PANEL (수사 지침서 팝업) - Dossier Reference Style
             // ════════════════════════════════════════════════
             var guidePanel = MkPanel("GuidePanel", canvasT, new Color(0.02f, 0.02f, 0.04f, 0.92f), true);
 
-            // 마닐라 가죽 서류철 베이스 (GuideBox)
-            var guideBox = MkPanel("GuideBox", guidePanel.transform, new Color(0.20f, 0.14f, 0.09f, 0.98f), false);
+            // 바닥 드롭섀도우 — 서류가 어두운 배경 위에 살짝 떠 보이도록
+            var guideShadow = MkPanel("GuideShadow", guidePanel.transform, new Color(0f, 0f, 0f, 0.40f), false);
+            AnchorBox(guideShadow.GetComponent<RectTransform>(), new Vector2(0.5f, 0.50f), new Vector2(1560, 840));
+            guideShadow.GetComponent<RectTransform>().anchoredPosition += new Vector2(12f, -12f);
+            guideShadow.transform.localEulerAngles = new Vector3(0, 0, -0.9f);
+
+            // 바탕이 되는 서류철 (Dossier Folder Base) — 실제 종이 텍스처 + 미세 기울임
+            var guideBox = MkPanel("GuideBox", guidePanel.transform, new Color(0.76f, 0.73f, 0.65f, 1.0f), false);
             var guideRt = guideBox.GetComponent<RectTransform>();
             AnchorBox(guideRt, new Vector2(0.5f, 0.50f), new Vector2(1560, 840));
+            guideBox.transform.localEulerAngles = new Vector3(0, 0, -0.9f);
+            {
+                var paperSprite = LoadUiSprite(DossierPaperPath);
+                if (paperSprite != null)
+                {
+                    var gbImg = guideBox.GetComponent<Image>();
+                    gbImg.sprite = paperSprite;
+                    gbImg.type   = Image.Type.Simple;
+                    gbImg.color  = new Color(0.88f, 0.85f, 0.78f, 1.0f);
+                }
+            }
 
-            var boxBorder = MkPanel("FolderBorder", guideBox.transform, new Color(0.42f, 0.30f, 0.18f, 0.90f), false);
+            var boxBorder = MkPanel("FolderBorder", guideBox.transform, new Color(0.48f, 0.44f, 0.38f, 0.80f), false);
             Full(boxBorder.GetComponent<RectTransform>());
             boxBorder.GetComponent<RectTransform>().offsetMin = new Vector2(-2, -2);
             boxBorder.GetComponent<RectTransform>().offsetMax = new Vector2( 2,  2);
+            boxBorder.transform.SetAsFirstSibling();
 
-            var topLine = MkPanel("TopBorder", guideBox.transform, ACCENT, false);
-            var topLineRt = topLine.GetComponent<RectTransform>();
-            topLineRt.anchorMin = new Vector2(0, 1); topLineRt.anchorMax = Vector2.one;
-            topLineRt.pivot = new Vector2(0.5f, 1); topLineRt.sizeDelta = new Vector2(0, 4);
+            // 왼쪽 쇠집게 클립 느낌의 오브젝트 (간이 구현)
+            var metalClip = MkPanel("MetalClip", guideBox.transform, new Color(0.8f, 0.8f, 0.8f, 1f), false);
+            AnchorBox(metalClip.GetComponent<RectTransform>(), new Vector2(0f, 0.7f), new Vector2(80, 160));
+            metalClip.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 0);
+            var clipBorder = MkPanel("ClipBorder", metalClip.transform, new Color(0.4f, 0.4f, 0.4f, 1f), false);
+            Full(clipBorder.GetComponent<RectTransform>()); clipBorder.GetComponent<RectTransform>().offsetMin = new Vector2(-2, -2); clipBorder.GetComponent<RectTransform>().offsetMax = new Vector2(2, 2); clipBorder.transform.SetAsFirstSibling();
 
-            var guideHeader = MkText("DirectiveHeader", guideBox.transform, 28, TextAlignmentOptions.Left, new Color(0.98f, 0.94f, 0.88f, 1.0f));
-            AnchorTopLeft(guideHeader.rectTransform, new Vector2(36, -22), new Vector2(1000, 44));
+            // 헤더 영역
+            var guideHeader = MkText("DirectiveHeader", guideBox.transform, 31, TextAlignmentOptions.Left, new Color(0.12f, 0.12f, 0.12f, 1.0f));
+            AnchorTopLeft(guideHeader.rectTransform, new Vector2(40, -32), new Vector2(1200, 44));
             guideHeader.fontStyle = FontStyles.Bold;
             guideHeader.characterSpacing = 1.5f;
-            guideHeader.text = "■  경찰청 현장 수사관 심문 지침서  |  INTERROGATION DIRECTIVE";
+            guideHeader.text = "■ 수사관 전술 운용 지침 (PROTOCOL // STRICTLY CONFIDENTIAL)";
 
-            // 🔴 우측 상단 붉은색 [ 기밀 지침 ] 스탬프 뱃지
-            var stampBadge = MkPanel("ConfidentialStamp", guideBox.transform, new Color(0.85f, 0.12f, 0.14f, 0.90f), false);
-            AnchorTopRight(stampBadge.GetComponent<RectTransform>(), new Vector2(-36, -14), new Vector2(250, 48));
-            var stampBorder = MkPanel("StampBorder", stampBadge.transform, new Color(1.0f, 0.35f, 0.35f, 0.95f), false);
-            Full(stampBorder.GetComponent<RectTransform>());
-            stampBorder.GetComponent<RectTransform>().offsetMin = new Vector2(-2, -2);
-            stampBorder.GetComponent<RectTransform>().offsetMax = new Vector2( 2,  2);
-
-            var stampText = MkText("StampText", stampBadge.transform, 16, TextAlignmentOptions.Center, Color.white);
+            // 🔴 우측 상단 붉은색 스탬프 — 낡은 고무도장처럼 비뚤게 찍힌 느낌
+            var stampBadge = MkPanel("ConfidentialStamp", guideBox.transform, new Color(0,0,0,0), false);
+            AnchorTopRight(stampBadge.GetComponent<RectTransform>(), new Vector2(-24, -6), new Vector2(280, 108));
+            stampBadge.transform.localEulerAngles = new Vector3(0, 0, -12f);
+            {
+                var stampBorderSprite = LoadUiSprite(DossierStampBorderPath);
+                if (stampBorderSprite != null)
+                {
+                    var stampArt = MkPanel("StampBorderArt", stampBadge.transform, new Color(1f, 1f, 1f, 0.85f), false);
+                    Full(stampArt.GetComponent<RectTransform>());
+                    stampArt.GetComponent<Image>().sprite = stampBorderSprite;
+                }
+            }
+            var stampText = MkText("StampText", stampBadge.transform, 17, TextAlignmentOptions.Center, new Color(0.62f, 0.09f, 0.08f, 0.90f));
             Full(stampText.rectTransform);
             stampText.fontStyle = FontStyles.Bold;
-            stampText.characterSpacing = 1.5f;
-            stampText.text = "●  [ 1급 기밀 지침 ]\nCONFIDENTIAL MANUAL";
+            stampText.characterSpacing = 2f;
+            stampText.text = "1급 비밀 기밀\nCLASSIFIED";
 
-            var divGO = MkPanel("Divider", guideBox.transform, new Color(0.55f, 0.44f, 0.32f, 0.40f), false);
-            AnchorTopLeft(divGO.GetComponent<RectTransform>(), new Vector2(36, -72), new Vector2(1488, 2));
+            var divGO = MkPanel("Divider", guideBox.transform, new Color(0.55f, 0.50f, 0.42f, 0.60f), false);
+            AnchorTopLeft(divGO.GetComponent<RectTransform>(), new Vector2(40, -82), new Vector2(1480, 4));
 
             // 내부에 얹힌 서류 종이 바탕 (Aged Paper Directive Sheet)
-            var contentCard = MkPanel("ContentCard", guideBox.transform, new Color(0.94f, 0.92f, 0.86f, 0.99f), false);
-            AnchorTopLeft(contentCard.GetComponent<RectTransform>(), new Vector2(36, -86), new Vector2(1488, 660));
-
-            var cBorder = MkPanel("CardBorder", contentCard.transform, new Color(0.72f, 0.65f, 0.52f, 0.70f), false);
+            var contentCard = MkPanel("ContentCard", guideBox.transform, new Color(0.92f, 0.90f, 0.86f, 1.0f), false);
+            AnchorTopLeft(contentCard.GetComponent<RectTransform>(), new Vector2(40, -96), new Vector2(1480, 680));
+            var cBorder = MkPanel("CardBorder", contentCard.transform, new Color(0.75f, 0.72f, 0.65f, 1.0f), false);
             Full(cBorder.GetComponent<RectTransform>());
-            cBorder.GetComponent<RectTransform>().offsetMin = new Vector2(-1, -1);
-            cBorder.GetComponent<RectTransform>().offsetMax = new Vector2(1, 1);
-            cBorder.transform.SetAsFirstSibling();
+            cBorder.GetComponent<RectTransform>().offsetMin = new Vector2(-2, -2); cBorder.GetComponent<RectTransform>().offsetMax = new Vector2(2, 2); cBorder.transform.SetAsFirstSibling();
 
-            // 3단 세부 지침 카피 (Cream Paper Cards)
-            Color CARD_BG     = new Color(0.98f, 0.96f, 0.92f, 0.98f);
-            Color INK_TEXT    = new Color(0.14f, 0.12f, 0.10f, 1.0f);
-            Color INK_TITLE1  = new Color(0.72f, 0.11f, 0.10f, 1.0f); // Mission Header
-            Color INK_TITLE2  = new Color(0.10f, 0.18f, 0.50f, 1.0f); // Tactics Header
-            Color INK_TITLE3  = new Color(0.78f, 0.16f, 0.12f, 1.0f); // Warning Header
-            Color BORDER_CARD = new Color(0.78f, 0.72f, 0.60f, 0.60f);
+            // 3단 세부 지침 카피
+            Color INK_TEXT    = new Color(0.12f, 0.12f, 0.10f, 1.0f);
+            Color INK_TITLE   = new Color(0.18f, 0.20f, 0.24f, 1.0f); // 진한 잉크
+            Color INK_WARN    = new Color(0.72f, 0.11f, 0.10f, 1.0f); // 경고용 빨강
+            Color BORDER_CARD = new Color(0.82f, 0.80f, 0.74f, 1.0f); // 내부 테두리
+            Color INNER_BG    = new Color(0.96f, 0.94f, 0.88f, 1.0f);
 
             // Col 1: Mission
-            var col1 = MkPanel("Col1_Mission", contentCard.transform, CARD_BG, false);
-            AnchorTopLeft(col1.GetComponent<RectTransform>(), new Vector2(24, -20), new Vector2(464, 620));
+            var col1 = MkPanel("Col1_Mission", contentCard.transform, INNER_BG, false);
+            AnchorTopLeft(col1.GetComponent<RectTransform>(), new Vector2(20, -20), new Vector2(466, 640));
             var c1B = MkPanel("Border", col1.transform, BORDER_CARD, false);
-            Full(c1B.GetComponent<RectTransform>()); c1B.GetComponent<RectTransform>().offsetMin = new Vector2(-1, -1); c1B.GetComponent<RectTransform>().offsetMax = new Vector2(1, 1);
-            c1B.transform.SetAsFirstSibling();
+            Full(c1B.GetComponent<RectTransform>()); c1B.GetComponent<RectTransform>().offsetMin = new Vector2(-2, -2); c1B.GetComponent<RectTransform>().offsetMax = new Vector2(2, 2); c1B.transform.SetAsFirstSibling();
 
-            var c1Title = MkText("Title", col1.transform, 23, TextAlignmentOptions.Left, INK_TITLE1);
-            AnchorTopLeft(c1Title.rectTransform, new Vector2(20, -18), new Vector2(420, 38));
+            var c1Title = MkText("Title", col1.transform, 27, TextAlignmentOptions.TopLeft, INK_TITLE);
+            AnchorTopLeft(c1Title.rectTransform, new Vector2(24, -24), new Vector2(420, 70));
             c1Title.fontStyle = FontStyles.Bold;
-            c1Title.text = "■  [ 1. 작전 목표 (MISSION) ]";
+            c1Title.text = "[PROTOCOL // A]\n사건 목표 (OBJECTIVE)";
+
+            var c1Div = MkPanel("Div", col1.transform, BORDER_CARD, false);
+            AnchorTopLeft(c1Div.GetComponent<RectTransform>(), new Vector2(24, -94), new Vector2(418, 2));
 
             var c1Body = MkText("Body", col1.transform, 20, TextAlignmentOptions.TopLeft, INK_TEXT);
-            AnchorTopLeft(c1Body.rectTransform, new Vector2(20, -64), new Vector2(424, 530));
-            c1Body.lineSpacing = 8f;
+            AnchorTopLeft(c1Body.rectTransform, new Vector2(24, -114), new Vector2(418, 510));
+            c1Body.lineSpacing = 10f;
             c1Body.enableWordWrapping = true;
+            c1Body.fontStyle = FontStyles.Normal; // 제목(Bold)과 대비되도록 본문은 레귤러로 — 위계 강화
             c1Body.text =
-                "<b>• 목표 자백 유도</b>\n" +
-                "피의자의 성격과 저항 포인트를 분석해 결정적 진술을 이끌어내십시오.\n\n" +
-                "<b>• 설득도 100% 달성</b>\n" +
-                "제한된 턴 이내에 설득도 게이지를 100%까지 끌어올리면 성공합니다.";
+                "• 자백 유도 시스템 (System Overwhelm)\n" +
+                "피의자의 핵심 저항 지점을 분석하고 무력화하여, 결정적인 진술을 확보하십시오.\n\n" +
+                "• 설득 시뮬레이션 달성 (100% Persuasion)\n" +
+                "제한된 시간(턴) 내에 '심리적 무장 해제' 게이지를 100%까지 올려 시뮬레이션을 성공적으로 완료하십시오.";
 
             // Col 2: Tactics
-            var col2 = MkPanel("Col2_Tactics", contentCard.transform, CARD_BG, false);
-            AnchorTopLeft(col2.GetComponent<RectTransform>(), new Vector2(512, -20), new Vector2(464, 620));
+            var col2 = MkPanel("Col2_Tactics", contentCard.transform, INNER_BG, false);
+            AnchorTopLeft(col2.GetComponent<RectTransform>(), new Vector2(506, -20), new Vector2(466, 640));
             var c2B = MkPanel("Border", col2.transform, BORDER_CARD, false);
-            Full(c2B.GetComponent<RectTransform>()); c2B.GetComponent<RectTransform>().offsetMin = new Vector2(-1, -1); c2B.GetComponent<RectTransform>().offsetMax = new Vector2(1, 1);
-            c2B.transform.SetAsFirstSibling();
+            Full(c2B.GetComponent<RectTransform>()); c2B.GetComponent<RectTransform>().offsetMin = new Vector2(-2, -2); c2B.GetComponent<RectTransform>().offsetMax = new Vector2(2, 2); c2B.transform.SetAsFirstSibling();
 
-            var c2Title = MkText("Title", col2.transform, 23, TextAlignmentOptions.Left, INK_TITLE2);
-            AnchorTopLeft(c2Title.rectTransform, new Vector2(20, -18), new Vector2(420, 38));
+            var c2Title = MkText("Title", col2.transform, 27, TextAlignmentOptions.TopLeft, INK_TITLE);
+            AnchorTopLeft(c2Title.rectTransform, new Vector2(24, -24), new Vector2(420, 70));
             c2Title.fontStyle = FontStyles.Bold;
-            c2Title.text = "■  [ 2. 심문 기법 (TACTICS) ]";
+            c2Title.text = "[TACTICS // B]\n심문 전술 (TACTICS)";
+
+            var c2Div = MkPanel("Div", col2.transform, BORDER_CARD, false);
+            AnchorTopLeft(c2Div.GetComponent<RectTransform>(), new Vector2(24, -94), new Vector2(418, 2));
 
             var c2Body = MkText("Body", col2.transform, 20, TextAlignmentOptions.TopLeft, INK_TEXT);
-            AnchorTopLeft(c2Body.rectTransform, new Vector2(20, -64), new Vector2(424, 530));
-            c2Body.lineSpacing = 8f;
+            AnchorTopLeft(c2Body.rectTransform, new Vector2(24, -114), new Vector2(418, 510));
+            c2Body.lineSpacing = 10f;
             c2Body.enableWordWrapping = true;
+            c2Body.fontStyle = FontStyles.Normal;
             c2Body.text =
-                "<b>• 맞춤형 접근법</b>\n" +
-                "감정 / 자존심 / 논리 / 신뢰 중 대상의 심리 약점에 맞춰 질문하십시오.\n\n" +
-                "<b>• 어조 & 행동 묘사</b>\n" +
-                "괄호로 행동을 입력하세요.\n" +
-                "예: <color=#8A4B00>(차분하게)</color> 또는 <color=#8A4B00>(책상을 두드리며)</color>\n\n" +
-                "<b>• 공략 힌트 해금</b>\n" +
-                "설득도 50% 이상 달성 시 실시간 힌트 노출.";
+                "• 맞춤형 접근 (Adaptive Profiling)\n" +
+                "감성, 자존심, 논리, 신뢰 등 네 가지 '정서적 결함' 중 대상에게 가장 적합한 약점을 공략하십시오.\n\n" +
+                "• 어조 및 동작 서술 (Mannerisms)\n" +
+                "질문 입력창에 대괄호 [ ]를 사용하여 행동을 서술하십시오. 예: [차분하게] 또는 [단호하게]\n\n" +
+                "• 전술 힌트 해금 (Tactical Unlocking)\n" +
+                "설득 시뮬레이션 50% 달성 시, 실시간 심층 분석 데이터가 해금됩니다.";
 
             // Col 3: Warnings
-            var col3 = MkPanel("Col3_Warnings", contentCard.transform, CARD_BG, false);
-            AnchorTopLeft(col3.GetComponent<RectTransform>(), new Vector2(1000, -20), new Vector2(464, 620));
+            var col3 = MkPanel("Col3_Warnings", contentCard.transform, INNER_BG, false);
+            AnchorTopLeft(col3.GetComponent<RectTransform>(), new Vector2(992, -20), new Vector2(466, 640));
             var c3B = MkPanel("Border", col3.transform, BORDER_CARD, false);
-            Full(c3B.GetComponent<RectTransform>()); c3B.GetComponent<RectTransform>().offsetMin = new Vector2(-1, -1); c3B.GetComponent<RectTransform>().offsetMax = new Vector2(1, 1);
-            c3B.transform.SetAsFirstSibling();
+            Full(c3B.GetComponent<RectTransform>()); c3B.GetComponent<RectTransform>().offsetMin = new Vector2(-2, -2); c3B.GetComponent<RectTransform>().offsetMax = new Vector2(2, 2); c3B.transform.SetAsFirstSibling();
 
-            var c3Title = MkText("Title", col3.transform, 23, TextAlignmentOptions.Left, INK_TITLE3);
-            AnchorTopLeft(c3Title.rectTransform, new Vector2(20, -18), new Vector2(420, 38));
+            var c3Title = MkText("Title", col3.transform, 27, TextAlignmentOptions.TopLeft, INK_WARN);
+            AnchorTopLeft(c3Title.rectTransform, new Vector2(24, -24), new Vector2(420, 70));
             c3Title.fontStyle = FontStyles.Bold;
-            c3Title.text = "■  [ 3. 주의 사항 (WARNINGS) ]";
+            c3Title.text = "[WARNINGS // C]\n경고 사항 (WARNINGS)";
+
+            var c3Div = MkPanel("Div", col3.transform, BORDER_CARD, false);
+            AnchorTopLeft(c3Div.GetComponent<RectTransform>(), new Vector2(24, -94), new Vector2(418, 2));
 
             var c3Body = MkText("Body", col3.transform, 20, TextAlignmentOptions.TopLeft, INK_TEXT);
-            AnchorTopLeft(c3Body.rectTransform, new Vector2(20, -64), new Vector2(424, 530));
-            c3Body.lineSpacing = 8f;
+            AnchorTopLeft(c3Body.rectTransform, new Vector2(24, -114), new Vector2(418, 510));
+            c3Body.lineSpacing = 10f;
             c3Body.enableWordWrapping = true;
+            c3Body.fontStyle = FontStyles.Normal;
             c3Body.text =
-                "<b>• 반발 및 감정 악화</b>\n" +
-                "무분별한 위협, 욕설, 부적절한 언행은 피의자를 자극해 설득도를 감소시킵니다.\n\n" +
-                "<b>• 심문 실패 조건</b>\n" +
-                "3연속 설득도 0% 유지 또는 제한 턴 초과 시 심문 실패 처리됩니다.";
+                "• 저항 및 대화 단절 (Resistance)\n" +
+                "협박, 인격 모독 등 부적절한 언행은 피의자의 심리적 장벽을 높이고 대화를 단절시킵니다.\n\n" +
+                "• 심문 실패 조건 (Protocol Fail)\n" +
+                "3회 연속 설득 게이지 0% 유지 또는 시간 초과 시 심문이 실패한 것으로 간주됩니다.";
 
-            var guideCloseBtn = MkButton("GuideCloseButton", guideBox.transform, "[ ◆ 지침서 확인 완료 ]", out var guideCloseLbl);
-            AnchorBox(guideCloseBtn.GetComponent<RectTransform>(), new Vector2(0.5f, 0.05f), new Vector2(340, 60));
-            guideCloseLbl.fontSize = 22;
+            // 종이 그레인/얼룩 오버레이 — GuideBox 전체 위에 얹혀 인쇄물 질감을 더함
+            {
+                var grainSprite = LoadUiSprite(DossierGrainPath);
+                if (grainSprite != null)
+                {
+                    var guideGrain = MkPanel("PaperGrainOverlay", guideBox.transform, new Color(1f, 1f, 1f, 0.55f), false);
+                    Full(guideGrain.GetComponent<RectTransform>());
+                    guideGrain.GetComponent<Image>().sprite = grainSprite;
+                }
+            }
+
+            var guideCloseBtn = MkButton("GuideCloseButton", guideBox.transform, "[ 전술 운용 지침 확인 완료 ]\n(닫기)", out var guideCloseLbl);
+            AnchorBox(guideCloseBtn.GetComponent<RectTransform>(), new Vector2(0.5f, -0.06f), new Vector2(400, 72));
+            guideCloseLbl.fontSize = 20;
             guideCloseLbl.fontStyle = FontStyles.Bold;
-            BtnColor(guideCloseBtn, ACCENT);
+            BtnColor(guideCloseBtn, new Color(0.7f, 0.72f, 0.74f, 1.0f)); // Metallic button
+            if (guideCloseBtn.transform.Find("Border") != null) guideCloseBtn.transform.Find("Border").GetComponent<Image>().color = new Color(0.4f, 0.4f, 0.4f, 1f);
+
 
             // ════════════════════════════════════════════════
             // TRAIT PANEL — 경찰청 수사 서류 파일 v2 (세련된 Dossier)
@@ -942,312 +1066,117 @@ namespace Persuasion.EditorTools
             // 챕터별 헤더 텍스트 참조 (런타임에 PersuasionUI가 교체)
             TMP_Text traitAgencyRef = null, traitSubRef = null, traitFooterRef = null;
 
-            // ── Dossier 전용 색 ──
-            Color D_PAPER  = new Color(0.95f, 0.92f, 0.85f, 1.00f);
-            Color D_PAPER2 = new Color(0.89f, 0.85f, 0.77f, 1.00f);   // 마진 영역 (약간 어두운 종이)
-            Color D_INK    = new Color(0.09f, 0.08f, 0.07f, 1.00f);
-            Color D_RED    = new Color(0.60f, 0.06f, 0.06f, 1.00f);
-            Color D_GOLD   = new Color(0.80f, 0.65f, 0.20f, 1.00f);   // 경찰청 금색 라인
-            Color D_MUT    = new Color(0.38f, 0.32f, 0.26f, 1.00f);
-            Color D_RULE   = new Color(0.58f, 0.52f, 0.42f, 0.38f);
-            Color D_MARGIN = new Color(0.68f, 0.12f, 0.12f, 0.55f);
-            Color D_TAPE   = new Color(0.99f, 0.97f, 0.87f, 0.65f);
-            Color D_STAMP  = new Color(0.58f, 0.05f, 0.05f, 0.21f);
-            Color D_AGENCY = new Color(0.48f, 0.04f, 0.04f, 1.00f);
+            // 바닥 드롭섀도우
+            var traitShadow = MkPanel("TraitShadow", traitPanel.transform, new Color(0f, 0f, 0f, 0.40f), false);
+            AnchorBox(traitShadow.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(1000, 950));
+            traitShadow.GetComponent<RectTransform>().anchoredPosition += new Vector2(12f, -12f);
+            traitShadow.transform.localEulerAngles = new Vector3(0, 0, 0.8f);
 
-            // ── 1) 낙차 그림자 ──
-            {
-                var sh = new GameObject("PaperShadow", typeof(RectTransform), typeof(Image));
-                sh.transform.SetParent(traitPanel.transform, false);
-                var shRt = sh.GetComponent<RectTransform>();
-                shRt.anchorMin = shRt.anchorMax = shRt.pivot = new Vector2(0.5f, 0.5f);
-                shRt.sizeDelta = new Vector2(916, 960); shRt.anchoredPosition = new Vector2(10f, -9f);
-                sh.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.52f);
-                sh.GetComponent<Image>().raycastTarget = false;
-            }
-
-            // ── 2) 왼쪽 마진 영역 (살짝 어두운 종이색, 심 바인더 느낌) ──
-            var traitBox = new GameObject("TraitBox", typeof(RectTransform), typeof(Image));
-            traitBox.transform.SetParent(traitPanel.transform, false);
+            // 바탕 서류철 — 실제 종이 텍스처 + 미세 기울임
+            var traitBox = MkPanel("TraitBox", traitPanel.transform, new Color(0.76f, 0.73f, 0.65f, 1.0f), false);
             var tbRt = traitBox.GetComponent<RectTransform>();
-            tbRt.anchorMin = tbRt.anchorMax = tbRt.pivot = new Vector2(0.5f, 0.5f);
-            tbRt.sizeDelta = new Vector2(920, 950); tbRt.anchoredPosition = Vector2.zero;
-            traitBox.GetComponent<Image>().color = D_PAPER2;
-            traitBox.GetComponent<Image>().raycastTarget = false;
-
-            // 오른쪽 메인 종이면 (마진 제외)
+            AnchorBox(tbRt, new Vector2(0.5f, 0.5f), new Vector2(1000, 950));
+            traitBox.transform.localEulerAngles = new Vector3(0, 0, 0.8f);
             {
-                var mainPaper = new GameObject("MainPaper", typeof(RectTransform), typeof(Image));
-                mainPaper.transform.SetParent(traitBox.transform, false);
-                var mpRt = mainPaper.GetComponent<RectTransform>();
-                mpRt.anchorMin = new Vector2(0, 0); mpRt.anchorMax = new Vector2(1, 1);
-                mpRt.offsetMin = new Vector2(42, 0); mpRt.offsetMax = Vector2.zero;
-                mainPaper.GetComponent<Image>().color = D_PAPER;
-                mainPaper.GetComponent<Image>().raycastTarget = false;
-            }
-
-            // ── 3) 스테이플 (상단 2개) ──
-            foreach (var sx in new float[] { 320f, 380f })
-            {
-                var stp = new GameObject("Staple", typeof(RectTransform), typeof(Image));
-                stp.transform.SetParent(traitBox.transform, false);
-                var stpRt = stp.GetComponent<RectTransform>();
-                stpRt.anchorMin = stpRt.anchorMax = new Vector2(0.5f, 1f);
-                stpRt.pivot = new Vector2(0.5f, 1f);
-                stpRt.sizeDelta = new Vector2(36, 9); stpRt.anchoredPosition = new Vector2(sx - 350f, -6f);
-                stp.GetComponent<Image>().color = new Color(0.48f, 0.50f, 0.52f, 0.85f);
-                stp.GetComponent<Image>().raycastTarget = false;
-            }
-
-            // ── 4) 테이프 스트립 (최상단) ──
-            {
-                var tape = new GameObject("Tape", typeof(RectTransform), typeof(Image));
-                tape.transform.SetParent(traitBox.transform, false);
-                var tRt = tape.GetComponent<RectTransform>();
-                tRt.anchorMin = new Vector2(0, 1); tRt.anchorMax = Vector2.one;
-                tRt.pivot = new Vector2(0.5f, 1); tRt.sizeDelta = new Vector2(0, 20);
-                tRt.anchoredPosition = Vector2.zero;
-                tape.GetComponent<Image>().color = D_TAPE;
-                tape.GetComponent<Image>().raycastTarget = false;
-            }
-
-            // ── 5) 경찰청 헤더 바 (agency bar) ──
-            {
-                var agBar = new GameObject("AgencyBar", typeof(RectTransform), typeof(Image));
-                agBar.transform.SetParent(traitBox.transform, false);
-                var abRt = agBar.GetComponent<RectTransform>();
-                abRt.anchorMin = new Vector2(0, 1); abRt.anchorMax = Vector2.one;
-                abRt.pivot = new Vector2(0.5f, 1); abRt.sizeDelta = new Vector2(0, 60);
-                abRt.anchoredPosition = new Vector2(0, -20);
-                agBar.GetComponent<Image>().color = D_AGENCY;
-                agBar.GetComponent<Image>().raycastTarget = false;
-
-                // 상단 금색 줄
-                var agGold = new GameObject("GoldLine", typeof(RectTransform), typeof(Image));
-                agGold.transform.SetParent(agBar.transform, false);
-                var agGRt = agGold.GetComponent<RectTransform>();
-                agGRt.anchorMin = new Vector2(0, 1); agGRt.anchorMax = Vector2.one;
-                agGRt.pivot = new Vector2(0.5f, 1); agGRt.sizeDelta = new Vector2(0, 3);
-                agGRt.anchoredPosition = Vector2.zero;
-                agGold.GetComponent<Image>().color = D_GOLD;
-                agGold.GetComponent<Image>().raycastTarget = false;
-
-                // 하단 금색 줄
-                var agGoldB = new GameObject("GoldLineB", typeof(RectTransform), typeof(Image));
-                agGoldB.transform.SetParent(agBar.transform, false);
-                var agGBRt = agGoldB.GetComponent<RectTransform>();
-                agGBRt.anchorMin = Vector2.zero; agGBRt.anchorMax = new Vector2(1, 0);
-                agGBRt.pivot = new Vector2(0.5f, 0); agGBRt.sizeDelta = new Vector2(0, 3);
-                agGBRt.anchoredPosition = Vector2.zero;
-                agGoldB.GetComponent<Image>().color = D_GOLD;
-                agGoldB.GetComponent<Image>().raycastTarget = false;
-
-                var agTxt = MkText("AgencyName", agBar.transform, 14, TextAlignmentOptions.Center,
-                                   new Color(1f, 0.96f, 0.88f, 0.96f));
-                Full(agTxt.rectTransform); agTxt.rectTransform.offsetMin = new Vector2(0, 8); agTxt.rectTransform.offsetMax = new Vector2(0, -8);
-                agTxt.fontStyle = FontStyles.Bold; agTxt.characterSpacing = 3.5f;
-                agTxt.text = "대한민국 경찰청     KOREA NATIONAL POLICE AGENCY     수사과";
-                traitAgencyRef = agTxt;
-            }
-
-            // ── 6) 문서 제목 ──
-            var traitTitleText = MkText("TitleText", traitBox.transform, 23, TextAlignmentOptions.Left,
-                                        new Color(D_RED.r, D_RED.g, D_RED.b, 1f));
-            AnchorTopLeft(traitTitleText.rectTransform, new Vector2(96, -94), new Vector2(520, 40));
-            traitTitleText.fontStyle = FontStyles.Bold; traitTitleText.characterSpacing = 0.8f;
-            traitTitleText.text = "■  피의자 수사 분석 보고서";
-
-            // ── 7) CASE 메타 (작은 메타데이터 2줄) ──
-            {
-                var cm = MkText("CaseMeta", traitBox.transform, 11, TextAlignmentOptions.Left, D_MUT);
-                AnchorTopLeft(cm.rectTransform, new Vector2(96, -138), new Vector2(460, 20));
-                cm.characterSpacing = 1.5f;
-                cm.text = "CASE FILE  //  KBI-2024-RESTRICTED  //  수사 전담 요원 한정 열람";
-                traitSubRef = cm;
-            }
-
-            // ── 8) 수평 구분선 (두껍게) ──
-            {
-                var div1 = new GameObject("Div1", typeof(RectTransform), typeof(Image));
-                div1.transform.SetParent(traitBox.transform, false);
-                AnchorTopLeft(div1.GetComponent<RectTransform>(), new Vector2(58, -166), new Vector2(800, 3));
-                div1.GetComponent<Image>().color = D_RED;
-                div1.GetComponent<Image>().raycastTarget = false;
-
-                var div2 = new GameObject("Div2", typeof(RectTransform), typeof(Image));
-                div2.transform.SetParent(traitBox.transform, false);
-                AnchorTopLeft(div2.GetComponent<RectTransform>(), new Vector2(58, -170), new Vector2(800, 1));
-                div2.GetComponent<Image>().color = new Color(D_RED.r, D_RED.g, D_RED.b, 0.35f);
-                div2.GetComponent<Image>().raycastTarget = false;
-            }
-
-            // ── 9) 폴라로이드 사진 슬롯 (우측 상단) — 얼굴 스캔라인 포함 ──
-            Image traitPhotoImageRef = null;
-            {
-                var pFrame = new GameObject("PhotoFrame", typeof(RectTransform), typeof(Image));
-                pFrame.transform.SetParent(traitBox.transform, false);
-                AnchorTopRight(pFrame.GetComponent<RectTransform>(), new Vector2(-52, -80), new Vector2(136, 170));
-                pFrame.GetComponent<Image>().color = new Color(0.18f, 0.16f, 0.14f, 1f);
-                pFrame.GetComponent<Image>().raycastTarget = false;
-
-                var pInner = new GameObject("PhotoGrey", typeof(RectTransform), typeof(Image));
-                pInner.transform.SetParent(pFrame.transform, false);
-                Full(pInner.GetComponent<RectTransform>());
-                pInner.GetComponent<RectTransform>().offsetMin = new Vector2(5, 26);
-                pInner.GetComponent<RectTransform>().offsetMax = new Vector2(-5, -5);
-                var pInnerImg = pInner.GetComponent<Image>();
-                pInnerImg.color = Color.white;
-                pInnerImg.raycastTarget = false;
-                traitPhotoImageRef = pInnerImg;
-
-                // 얼굴 스캔라인 (3줄 수평) — 사진 분석 감식 느낌
-                foreach (var scanY in new float[] { 0.65f, 0.45f, 0.28f })
+                var paperSprite = LoadUiSprite(DossierPaperPath);
+                if (paperSprite != null)
                 {
-                    var sl = new GameObject("ScanLine", typeof(RectTransform), typeof(Image));
-                    sl.transform.SetParent(pInner.transform, false);
-                    var slRt = sl.GetComponent<RectTransform>();
-                    slRt.anchorMin = new Vector2(0, scanY); slRt.anchorMax = new Vector2(1, scanY);
-                    slRt.pivot = new Vector2(0.5f, 0.5f); slRt.sizeDelta = new Vector2(0, 1);
-                    slRt.anchoredPosition = Vector2.zero;
-                    sl.GetComponent<Image>().color = new Color(0.62f, 0.60f, 0.56f, 0.55f);
-                    sl.GetComponent<Image>().raycastTarget = false;
+                    var tbImg = traitBox.GetComponent<Image>();
+                    tbImg.sprite = paperSprite;
+                    tbImg.type   = Image.Type.Simple;
+                    tbImg.color  = new Color(0.88f, 0.85f, 0.78f, 1.0f);
                 }
-
-                var pLabel = MkText("PhotoLabel", pFrame.transform, 9, TextAlignmentOptions.Center,
-                                    new Color(0.78f, 0.75f, 0.70f, 0.90f));
-                AnchorTopLeft(pLabel.rectTransform, new Vector2(0, -148), new Vector2(136, 24));
-                pLabel.fontStyle = FontStyles.Bold; pLabel.characterSpacing = 1.5f;
-                pLabel.text = "EVIDENCE PHOTO";
-
-                var pSub = MkText("PhotoSub", pFrame.transform, 8, TextAlignmentOptions.Center,
-                                  new Color(0.62f, 0.58f, 0.52f, 0.88f));
-                AnchorTopLeft(pSub.rectTransform, new Vector2(0, -161), new Vector2(136, 16));
-                pSub.text = "용의자 식별 사진";
             }
 
-            // ── 10) 붉은 왼쪽 마진 선 ──
+            var t_boxBorder = MkPanel("FolderBorder", traitBox.transform, new Color(0.48f, 0.44f, 0.38f, 0.80f), false);
+            Full(t_boxBorder.GetComponent<RectTransform>()); t_boxBorder.GetComponent<RectTransform>().offsetMin = new Vector2(-2, -2); t_boxBorder.GetComponent<RectTransform>().offsetMax = new Vector2(2, 2); t_boxBorder.transform.SetAsFirstSibling();
+
+            // 왼쪽 쇠집게 클립
+            var t_metalClip = MkPanel("MetalClip", traitBox.transform, new Color(0.8f, 0.8f, 0.8f, 1f), false);
+            AnchorBox(t_metalClip.GetComponent<RectTransform>(), new Vector2(0f, 0.75f), new Vector2(80, 160));
+            var t_clipBorder = MkPanel("ClipBorder", t_metalClip.transform, new Color(0.4f, 0.4f, 0.4f, 1f), false);
+            Full(t_clipBorder.GetComponent<RectTransform>()); t_clipBorder.GetComponent<RectTransform>().offsetMin = new Vector2(-2, -2); t_clipBorder.GetComponent<RectTransform>().offsetMax = new Vector2(2, 2); t_clipBorder.transform.SetAsFirstSibling();
+
+            // 헤더
+            var traitTitleText = MkText("TitleText", traitBox.transform, 31, TextAlignmentOptions.Left, new Color(0.12f, 0.12f, 0.12f, 1.0f));
+            AnchorTopLeft(traitTitleText.rectTransform, new Vector2(40, -32), new Vector2(600, 44));
+            traitTitleText.fontStyle = FontStyles.Bold; traitTitleText.characterSpacing = 1.5f;
+            traitTitleText.text = "■ 피의자 수사 분석 보고서 (DOSSIER // STRICTLY CONFIDENTIAL)";
+
+            // 우상단 스탬프 — 낡은 고무도장처럼 비뚤게 찍힌 느낌
+            var t_stampBadge = MkPanel("ConfidentialStamp", traitBox.transform, new Color(0,0,0,0), false);
+            AnchorTopRight(t_stampBadge.GetComponent<RectTransform>(), new Vector2(-24, -6), new Vector2(260, 100));
+            t_stampBadge.transform.localEulerAngles = new Vector3(0, 0, 9f);
             {
-                var mLine = new GameObject("MarginLine", typeof(RectTransform), typeof(Image));
-                mLine.transform.SetParent(traitBox.transform, false);
-                AnchorTopLeft(mLine.GetComponent<RectTransform>(), new Vector2(88, -172), new Vector2(2, 672));
-                mLine.GetComponent<Image>().color = D_MARGIN;
-                mLine.GetComponent<Image>().raycastTarget = false;
+                var stampBorderSprite = LoadUiSprite(DossierStampBorderPath);
+                if (stampBorderSprite != null)
+                {
+                    var t_stampArt = MkPanel("StampBorderArt", t_stampBadge.transform, new Color(1f, 1f, 1f, 0.85f), false);
+                    Full(t_stampArt.GetComponent<RectTransform>());
+                    t_stampArt.GetComponent<Image>().sprite = stampBorderSprite;
+                }
             }
+            var t_stampText = MkText("StampText", t_stampBadge.transform, 16, TextAlignmentOptions.Center, new Color(0.62f, 0.09f, 0.08f, 0.90f));
+            Full(t_stampText.rectTransform); t_stampText.fontStyle = FontStyles.Bold; t_stampText.characterSpacing = 1.5f;
+            t_stampText.text = "1급 비밀 기밀\nCLASSIFIED";
 
-            // ── 11) 펀치 구멍 3개 — TMP Text "●" (원형) ──
-            foreach (var hy in new float[] { -270f, -470f, -670f })
+            var t_divGO = MkPanel("Divider", traitBox.transform, new Color(0.55f, 0.50f, 0.42f, 0.60f), false);
+            AnchorTopLeft(t_divGO.GetComponent<RectTransform>(), new Vector2(40, -82), new Vector2(920, 4));
+
+            // 내부에 얹힌 서류 종이 바탕
+            var t_contentCard = MkPanel("ContentCard", traitBox.transform, new Color(0.92f, 0.90f, 0.86f, 1.0f), false);
+            AnchorTopLeft(t_contentCard.GetComponent<RectTransform>(), new Vector2(40, -96), new Vector2(920, 810));
+            var t_cBorder = MkPanel("CardBorder", t_contentCard.transform, new Color(0.75f, 0.72f, 0.65f, 1.0f), false);
+            Full(t_cBorder.GetComponent<RectTransform>()); t_cBorder.GetComponent<RectTransform>().offsetMin = new Vector2(-2, -2); t_cBorder.GetComponent<RectTransform>().offsetMax = new Vector2(2, 2); t_cBorder.transform.SetAsFirstSibling();
+
+            // 내부 요소 (종이 위)
+            var agTxt = MkText("AgencyName", t_contentCard.transform, 13, TextAlignmentOptions.Center, new Color(0.18f, 0.20f, 0.24f, 1.0f));
+            AnchorTopLeft(agTxt.rectTransform, new Vector2(20, -16), new Vector2(880, 24));
+            agTxt.fontStyle = FontStyles.Bold; agTxt.characterSpacing = 2.5f;
+            agTxt.text = "대한민국 경찰청  /  KOREA NATIONAL POLICE AGENCY  /  수사과";
+            traitAgencyRef = agTxt;
+
+            var cm = MkText("CaseMeta", t_contentCard.transform, 11, TextAlignmentOptions.Left, new Color(0.18f, 0.20f, 0.24f, 1.0f));
+            AnchorTopLeft(cm.rectTransform, new Vector2(24, -48), new Vector2(500, 18));
+            cm.characterSpacing = 1.2f;
+            cm.text = "CASE FILE  //  KR-2024-██████-RESTRICTED  //  수사 진행 요원 한정 열람";
+            traitSubRef = cm;
+
+            var divInner = MkPanel("DivInner", t_contentCard.transform, new Color(0.82f, 0.80f, 0.74f, 1.0f), false);
+            AnchorTopLeft(divInner.GetComponent<RectTransform>(), new Vector2(20, -72), new Vector2(880, 2));
+
+            // 본문 텍스트 (사진 칸 제거 → 전체 폭 사용)
+            var traitText = MkText("TraitText", t_contentCard.transform, 20, TextAlignmentOptions.TopLeft, new Color(0.12f, 0.12f, 0.10f, 1.0f));
+            AnchorTopLeft(traitText.rectTransform, new Vector2(24, -90), new Vector2(876, 680));
+            traitText.enableWordWrapping = true; traitText.lineSpacing = 12f;
+            traitText.fontStyle = FontStyles.Normal; // 제목(Bold)과 대비
+
+            // 하단 분류 띠
+            var footerBar = MkPanel("FooterBar", t_contentCard.transform, new Color(0.90f, 0.86f, 0.80f, 1.0f), false);
+            var fbRt = footerBar.GetComponent<RectTransform>();
+            fbRt.anchorMin = Vector2.zero; fbRt.anchorMax = new Vector2(1, 0); fbRt.pivot = new Vector2(0.5f, 0); fbRt.sizeDelta = new Vector2(0, 34); fbRt.anchoredPosition = Vector2.zero;
+            var footerTxt = MkText("FooterText", footerBar.transform, 11, TextAlignmentOptions.Center, new Color(0.72f, 0.11f, 0.10f, 1.0f));
+            Full(footerTxt.rectTransform); footerTxt.fontStyle = FontStyles.Bold; footerTxt.characterSpacing = 3f;
+            footerTxt.text = "SECRET  //  FOR OFFICIAL USE ONLY  //  열람 후 즉시 파기";
+            traitFooterRef = footerTxt;
+
+            // 종이 그레인/얼룩 오버레이
             {
-                var hole = MkText("PunchHole", traitBox.transform, 26, TextAlignmentOptions.Center,
-                                  new Color(0.05f, 0.03f, 0.02f, 0.92f));
-                hole.rectTransform.anchorMin = hole.rectTransform.anchorMax = new Vector2(0, 1);
-                hole.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-                hole.rectTransform.sizeDelta = new Vector2(28, 28);
-                hole.rectTransform.anchoredPosition = new Vector2(16, hy);
-                hole.text = "●"; hole.enableWordWrapping = false;
+                var grainSprite = LoadUiSprite(DossierGrainPath);
+                if (grainSprite != null)
+                {
+                    var traitGrain = MkPanel("PaperGrainOverlay", traitBox.transform, new Color(1f, 1f, 1f, 0.55f), false);
+                    Full(traitGrain.GetComponent<RectTransform>());
+                    traitGrain.GetComponent<Image>().sprite = grainSprite;
+                }
             }
 
-            // ── 12) 룰드 라인 (14줄, 더 선명하게) ──
-            for (int li = 0; li < 14; li++)
-            {
-                var rl = new GameObject("RuledLine" + li, typeof(RectTransform), typeof(Image));
-                rl.transform.SetParent(traitBox.transform, false);
-                AnchorTopLeft(rl.GetComponent<RectTransform>(), new Vector2(90, -175f - li * 48f), new Vector2(768, 1));
-                rl.GetComponent<Image>().color = D_RULE;
-                rl.GetComponent<Image>().raycastTarget = false;
-            }
-
-            // ── 13) 기밀 도장 — 테두리 상자 + 텍스트 (더 강렬하게) ──
-            {
-                // 도장 외곽 박스
-                var stampFrame = new GameObject("StampFrame", typeof(RectTransform), typeof(Image));
-                stampFrame.transform.SetParent(traitBox.transform, false);
-                var sfRt = stampFrame.GetComponent<RectTransform>();
-                sfRt.anchorMin = sfRt.anchorMax = sfRt.pivot = new Vector2(0.5f, 0.5f);
-                sfRt.sizeDelta = new Vector2(580, 110); sfRt.anchoredPosition = new Vector2(-20, 60);
-                sfRt.transform.localEulerAngles = new Vector3(0, 0, -20f);
-                stampFrame.GetComponent<Image>().color = new Color(D_RED.r, D_RED.g, D_RED.b, 0.13f);
-                stampFrame.GetComponent<Image>().raycastTarget = false;
-
-                // 도장 내부 (살짝 다른 색)
-                var stampInner = new GameObject("StampInner", typeof(RectTransform), typeof(Image));
-                stampInner.transform.SetParent(stampFrame.transform, false);
-                Full(stampInner.GetComponent<RectTransform>());
-                stampInner.GetComponent<RectTransform>().offsetMin = new Vector2(6, 6);
-                stampInner.GetComponent<RectTransform>().offsetMax = new Vector2(-6, -6);
-                stampInner.GetComponent<Image>().color = new Color(D_RED.r, D_RED.g, D_RED.b, 0.07f);
-                stampInner.GetComponent<Image>().raycastTarget = false;
-
-                // 도장 텍스트
-                var stampTxt = MkText("ClassifiedStamp", traitBox.transform, 70, TextAlignmentOptions.Center, D_STAMP);
-                var stRt = stampTxt.rectTransform;
-                stRt.anchorMin = stRt.anchorMax = stRt.pivot = new Vector2(0.5f, 0.5f);
-                stRt.sizeDelta = new Vector2(600, 120); stRt.anchoredPosition = new Vector2(-20, 60);
-                stampTxt.fontStyle = FontStyles.Bold; stampTxt.characterSpacing = 12f;
-                stampTxt.text = "기  밀  //  SECRET";
-                stampTxt.enableWordWrapping = false;
-                stampTxt.transform.localEulerAngles = new Vector3(0, 0, -20f);
-
-                // CONFIDENTIAL 도장 (우상단, 살짝 기울어진 빨간 박스)
-                var confBox = new GameObject("ConfidentialStamp", typeof(RectTransform), typeof(Image));
-                confBox.transform.SetParent(traitBox.transform, false);
-                var cbRt = confBox.GetComponent<RectTransform>();
-                cbRt.anchorMin = cbRt.anchorMax = new Vector2(1, 1); cbRt.pivot = new Vector2(1, 1);
-                cbRt.sizeDelta = new Vector2(212, 56); cbRt.anchoredPosition = new Vector2(-44, -30);
-                cbRt.localEulerAngles = new Vector3(0, 0, 5f);
-                var cbImg = confBox.GetComponent<Image>();
-                cbImg.color = new Color(D_RED.r, D_RED.g, D_RED.b, 0.10f);
-                cbImg.raycastTarget = false;
-                var cbBorder = MkPanel("Border", confBox.transform, new Color(D_RED.r, D_RED.g, D_RED.b, 0.85f), false);
-                Full(cbBorder.GetComponent<RectTransform>());
-                cbBorder.GetComponent<RectTransform>().offsetMin = new Vector2(-2.5f, -2.5f);
-                cbBorder.GetComponent<RectTransform>().offsetMax = new Vector2(2.5f, 2.5f);
-                cbBorder.transform.SetAsFirstSibling();
-                var confTxt = MkText("Label", confBox.transform, 26, TextAlignmentOptions.Center, new Color(0.70f, 0.12f, 0.12f, 0.92f));
-                Full(confTxt.rectTransform);
-                confTxt.fontStyle = FontStyles.Bold; confTxt.characterSpacing = 3f;
-                confTxt.text = "CONFIDENTIAL"; confTxt.enableWordWrapping = false;
-            }
-
-            // ── 14) 본문 텍스트 ──
-            var traitText = MkText("TraitText", traitBox.transform, 20, TextAlignmentOptions.TopLeft, D_INK);
-            AnchorTopLeft(traitText.rectTransform, new Vector2(96, -174), new Vector2(690, 666));
-            traitText.enableWordWrapping = true; traitText.lineSpacing = 10f;
-
-            // ── 15) 하단 분류 띠 (SECRET footer) ──
-            {
-                var footerBar = new GameObject("FooterBar", typeof(RectTransform), typeof(Image));
-                footerBar.transform.SetParent(traitBox.transform, false);
-                var fbRt = footerBar.GetComponent<RectTransform>();
-                fbRt.anchorMin = Vector2.zero; fbRt.anchorMax = new Vector2(1, 0);
-                fbRt.pivot = new Vector2(0.5f, 0); fbRt.sizeDelta = new Vector2(0, 34);
-                fbRt.anchoredPosition = new Vector2(0, 78);
-                footerBar.GetComponent<Image>().color = D_AGENCY;
-                footerBar.GetComponent<Image>().raycastTarget = false;
-
-                // 금색 상단선
-                var fGold = new GameObject("FooterGold", typeof(RectTransform), typeof(Image));
-                fGold.transform.SetParent(footerBar.transform, false);
-                var fgRt = fGold.GetComponent<RectTransform>();
-                fgRt.anchorMin = new Vector2(0, 1); fgRt.anchorMax = Vector2.one;
-                fgRt.pivot = new Vector2(0.5f, 1); fgRt.sizeDelta = new Vector2(0, 2);
-                fgRt.anchoredPosition = Vector2.zero;
-                fGold.GetComponent<Image>().color = D_GOLD;
-                fGold.GetComponent<Image>().raycastTarget = false;
-
-                var footerTxt = MkText("FooterText", footerBar.transform, 11, TextAlignmentOptions.Center,
-                                       new Color(1f, 0.96f, 0.88f, 0.75f));
-                Full(footerTxt.rectTransform);
-                footerTxt.fontStyle = FontStyles.Bold; footerTxt.characterSpacing = 3f;
-                footerTxt.text = "SECRET  //  FOR OFFICIAL USE ONLY  //  열람 후 즉시 파기";
-                traitFooterRef = footerTxt;
-            }
-
-            // ── 16) 닫기 버튼 ──
-            var traitCloseBtn = MkButton("TraitCloseButton", traitBox.transform, "서류철 닫기", out var traitCloseLbl);
-            AnchorBox(traitCloseBtn.GetComponent<RectTransform>(), new Vector2(0.5f, 0.058f), new Vector2(300, 56));
-            traitCloseLbl.fontSize = 20;
-            traitCloseLbl.fontStyle = FontStyles.Bold; traitCloseLbl.characterSpacing = 2f;
-            BtnColor(traitCloseBtn, D_RED);
+            // 닫기 버튼
+            var traitCloseBtn = MkButton("TraitCloseButton", traitBox.transform, "[ 수사 서류 확인 완료 ]\n(닫기)", out var traitCloseLbl);
+            AnchorBox(traitCloseBtn.GetComponent<RectTransform>(), new Vector2(0.5f, -0.05f), new Vector2(400, 72));
+            traitCloseLbl.fontSize = 20; traitCloseLbl.fontStyle = FontStyles.Bold;
+            BtnColor(traitCloseBtn, new Color(0.7f, 0.72f, 0.74f, 1.0f)); // Metallic button
+            if (traitCloseBtn.transform.Find("Border") != null) traitCloseBtn.transform.Find("Border").GetComponent<Image>().color = new Color(0.4f, 0.4f, 0.4f, 1f);
 
             // ════════════════════════════════════════════════
             // LEADERBOARD PANEL (글로벌 랭킹)
@@ -1335,6 +1264,19 @@ namespace Persuasion.EditorTools
             if (brakeClip != null) Wire(audioMgr, "carBrakeSfx", brakeClip);
             else Debug.LogWarning("[Persuasion] car_brake.wav 없음");
 
+            // 효과음 배선: 설득도 상승/하락, 클리어/실패 스팅어, 버튼 클릭 (파일 없으면 조용히 스킵)
+            void WireSfxIfExists(string fileName, string fieldName)
+            {
+                var clip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/" + fileName);
+                if (clip != null) Wire(audioMgr, fieldName, clip);
+                else Debug.LogWarning($"[Persuasion] {fileName} 없음 (선택 사항 — Assets/Audio/SFX/에 추가하면 자동 배선됨)");
+            }
+            WireSfxIfExists("persuasion_up.wav",   "persuasionUpSfx");
+            WireSfxIfExists("persuasion_down.wav", "persuasionDownSfx");
+            WireSfxIfExists("clear_stinger.wav",   "clearStingerSfx");
+            WireSfxIfExists("fail_stinger.wav",    "failStingerSfx");
+            WireSfxIfExists("button_click.wav",    "buttonClickSfx");
+
             // ════════════════════════════════════════════════
             // PersuasionUI 배선
             // ════════════════════════════════════════════════
@@ -1355,6 +1297,9 @@ namespace Persuasion.EditorTools
             Wire(ui, "storyBeatImage",         storyBeatImage);
             Wire(ui, "storyBeatText",          storyBeatText);
             Wire(ui, "storyBeatContinueButton",storyBeatContinueBtn);
+            Wire(ui, "storyHeaderLabel",       storyHeader);
+            Wire(ui, "storyPageIndicator",     storyPageIndicator);
+            Wire(ui, "storyCaseLabel",         storyCaseLabel);
             Wire(ui, "stageIntroOverlay",      stageIntroOverlay);
             Wire(ui, "stageIntroGroup",        stageIntroGroup);
             Wire(ui, "introStageTitleText",    introTitleText);
@@ -1382,10 +1327,11 @@ namespace Persuasion.EditorTools
             Wire(ui, "emotionLabel",           emotionLabel);
             Wire(ui, "hintPanel",              hintPanel);
             Wire(ui, "hintText",               hintText);
+            Wire(ui, "evidenceContainer",      evidenceContainer.transform);
             Wire(ui, "traitPanel",             traitPanel);
             Wire(ui, "traitTitleText",         traitTitleText);
             Wire(ui, "traitText",              traitText);
-            Wire(ui, "traitPhotoImage",        traitPhotoImageRef);
+            // traitPhotoImage 제거됨 (사진 칸 없앰)
             Wire(ui, "traitAgencyText",        traitAgencyRef);
             Wire(ui, "traitSubHeaderText",     traitSubRef);
             Wire(ui, "traitFooterText",        traitFooterRef);
@@ -1661,6 +1607,21 @@ namespace Persuasion.EditorTools
         }
 
         // ── UI 팩토리 ────────────────────────────────────────────────
+
+        // 외부 PNG를 Sprite(Single)로 강제 임포트 후 로드. Dossier 종이/그레인/스탬프 텍스처용.
+        private static Sprite LoadUiSprite(string assetPath)
+        {
+            var imp = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+            if (imp != null && (imp.textureType != TextureImporterType.Sprite || imp.spriteImportMode != SpriteImportMode.Single))
+            {
+                imp.textureType      = TextureImporterType.Sprite;
+                imp.spriteImportMode = SpriteImportMode.Single;
+                imp.mipmapEnabled    = false;
+                imp.alphaIsTransparency = true;
+                imp.SaveAndReimport();
+            }
+            return AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+        }
 
         private static GameObject MkPanel(string name, Transform parent, Color bg, bool blockRaycast)
         {

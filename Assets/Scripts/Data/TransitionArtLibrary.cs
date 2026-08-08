@@ -8,7 +8,8 @@ namespace Persuasion
     {
         [Tooltip("StageData.stageId 와 동일해야 함")]
         public string stageId;
-        public Sprite sprite;
+        public Sprite sprite;          // 장면 일러스트 (도입컷)
+        public Sprite characterSprite; // 캐릭터 초상화 — 있으면 장면 페이지 이후 별도 페이지로 표시
     }
 
     [Serializable]
@@ -40,6 +41,25 @@ namespace Persuasion
             foreach (var e in intros)
                 if (e != null && e.stageId == stageId) return e.sprite;
             return null;
+        }
+
+        /// <summary>캐릭터 초상화 스프라이트. 없으면 장면 일러스트로 폴백.</summary>
+        public Sprite GetIntroCharacter(string stageId)
+        {
+            if (intros == null || string.IsNullOrEmpty(stageId)) return null;
+            foreach (var e in intros)
+                if (e != null && e.stageId == stageId)
+                    return e.characterSprite != null ? e.characterSprite : e.sprite;
+            return null;
+        }
+
+        /// <summary>캐릭터 초상화가 별도로 존재하는지 여부.</summary>
+        public bool HasCharacterSprite(string stageId)
+        {
+            if (intros == null || string.IsNullOrEmpty(stageId)) return false;
+            foreach (var e in intros)
+                if (e != null && e.stageId == stageId) return e.characterSprite != null;
+            return false;
         }
 
         public Sprite GetTransition(string fromStageId, string toStageId)

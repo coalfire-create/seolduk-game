@@ -109,9 +109,9 @@ namespace Persuasion.EditorTools
                     settings.quality = 0.4f;
                     changed = true;
                 }
-                if (settings.loadType != AudioClipLoadType.CompressedInMemory)
+                if (settings.loadType != AudioClipLoadType.DecompressOnLoad)
                 {
-                    settings.loadType = AudioClipLoadType.CompressedInMemory;
+                    settings.loadType = AudioClipLoadType.DecompressOnLoad;
                     changed = true;
                 }
 
@@ -138,6 +138,7 @@ namespace Persuasion.EditorTools
 
         public static void FullBatchBuild()
         {
+            GameDataSetupTool.CreateGameData();
             SceneBuilderTool.Build();
             BuildWebGL();
         }

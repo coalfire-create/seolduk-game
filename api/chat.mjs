@@ -1,11 +1,12 @@
 // 설득의 기술 — OpenAI 프록시 (Vercel Serverless Function)
 // Netlify Functions 버전에서 이식 (req/res 패턴으로 변환)
 
-const MODEL         = 'gpt-4o-mini';
+const MODEL         = 'gpt-4.1';
 const MAX_TOKENS    = 500;
-const MAX_MESSAGES  = 40;
-const MAX_MSG_LEN   = 4000;
-const MAX_TOTAL_LEN = 24000;
+// 긴 취조 대화(수십 턴)에서도 막히지 않도록 넉넉히. gpt-4.1은 대용량 컨텍스트라 여유.
+const MAX_MESSAGES  = 200;
+const MAX_MSG_LEN   = 8000;
+const MAX_TOTAL_LEN = 80000;
 
 const ALLOWED_ROLES = new Set(['system', 'user', 'assistant']);
 

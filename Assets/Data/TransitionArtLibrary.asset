@@ -16,36 +16,52 @@ MonoBehaviour:
   intros:
   - stageId: stage_ai_core
     sprite: {fileID: 21300000, guid: 90125bade30014c3482d5cbd4af4534a, type: 3}
+    characterSprite: {fileID: 0}
   - stageId: stage_ai_creator
     sprite: {fileID: 21300000, guid: 0dcc2b4cbc8b54203b59171cc8803cec, type: 3}
+    characterSprite: {fileID: 21300000, guid: 05318df5707e54be3b1d0ef2a718fa7a, type: 3}
   - stageId: stage_ai_terminal
     sprite: {fileID: 21300000, guid: 806cbec73901141168f811850bfec7f4, type: 3}
+    characterSprite: {fileID: 0}
   - stageId: stage_hitandrun
     sprite: {fileID: 21300000, guid: ba941964a49f04752b506b232aa644b9, type: 3}
+    characterSprite: {fileID: 21300000, guid: 335aa144e91a5444fb886cb5068e667d, type: 3}
   - stageId: stage_premeditated
     sprite: {fileID: 21300000, guid: caef82adbbbd046d5b887c7650b30f77, type: 3}
+    characterSprite: {fileID: 21300000, guid: 22ecbab8a7c154828b5a5b59396f2145, type: 3}
+  - stageId: stage_serialkiller
+    sprite: {fileID: 21300000, guid: ddfec2ff4f32e4c33843fa0d2958bcee, type: 3}
+    characterSprite: {fileID: 21300000, guid: ad028e4baf6ed45779998ce383bcc8ff, type: 3}
   - stageId: stage_spy_boss
     sprite: {fileID: 21300000, guid: f81a88e4d516f498c9c9c7ce0821e3af, type: 3}
+    characterSprite: {fileID: 21300000, guid: 843883ffb19004bf8b56eaf45136bf76, type: 3}
   - stageId: stage_spy_janitor
     sprite: {fileID: 21300000, guid: e556aa868db9f41b58c0bfbffb7ce0bb, type: 3}
+    characterSprite: {fileID: 21300000, guid: 5a63f0f8d4aa74e23a5a6d8c1304491f, type: 3}
   - stageId: stage_spy_president
     sprite: {fileID: 21300000, guid: eb7c134a370094515bdd4f8e6a0b1186, type: 3}
+    characterSprite: {fileID: 21300000, guid: 79c2fb8eec2b3494c9139d9c82d673da, type: 3}
   transitions:
   - fromStageId: stage_ai_creator
     toStageId: stage_ai_core
     sprite: {fileID: 21300000, guid: 3210ba20b286f4edca95df72a65b7142, type: 3}
+    spriteExtra: {fileID: 0}
   - fromStageId: stage_ai_terminal
     toStageId: stage_ai_creator
     sprite: {fileID: 21300000, guid: e6c433cfa165849e2a1f1e12b2b41df5, type: 3}
+    spriteExtra: {fileID: 0}
   - fromStageId: stage_hitandrun
     toStageId: stage_premeditated
     sprite: {fileID: 21300000, guid: 48e955d3bd96640efb06918f6b565fee, type: 3}
+    spriteExtra: {fileID: 0}
   - fromStageId: stage_premeditated
     toStageId: stage_serialkiller
     sprite: {fileID: 21300000, guid: c512b38ca628e4fff9423e6fd10f8a34, type: 3}
+    spriteExtra: {fileID: 0}
   - fromStageId: stage_spy_boss
     toStageId: stage_spy_janitor
     sprite: {fileID: 21300000, guid: e74991b917b634aeb970fe26bd23295a, type: 3}
+    spriteExtra: {fileID: 0}
   - fromStageId: stage_spy_janitor
     toStageId: stage_spy_president
     sprite: {fileID: 21300000, guid: 00b78851ac51f4992b536d4bf0589d73, type: 3}

@@ -1,0 +1,9 @@
+{
+  "name": "persuasion-functions",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "설득의 기술 WebGL 게임용 OpenAI 프록시 Netlify Functions",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}

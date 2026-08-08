@@ -1,0 +1,114 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ac1a799eee484585babaa625a3f8be9, type: 3}
+  m_Name: StagePortraitLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::Persuasion.StagePortraitLibrary
+  sets:
+  - stageId: stage_ai_core
+    introSprite: {fileID: 21300000, guid: 90125bade30014c3482d5cbd4af4534a, type: 3}
+    baseSprite: {fileID: 21300000, guid: 646e12e20d9d6429693165e0d0db07c7, type: 3}
+    anger: {fileID: 0}
+    disgust: {fileID: 0}
+    fear: {fileID: 0}
+    joy: {fileID: 0}
+    sadness: {fileID: 0}
+    surprise: {fileID: 0}
+    confused: {fileID: 0}
+    bewildered: {fileID: 0}
+  - stageId: stage_ai_creator
+    introSprite: {fileID: 21300000, guid: 0dcc2b4cbc8b54203b59171cc8803cec, type: 3}
+    baseSprite: {fileID: 21300000, guid: c361548b51a384c90adb63ca2a77319e, type: 3}
+    anger: {fileID: 21300000, guid: 167df1f166ccd447193dd7ad66882275, type: 3}
+    disgust: {fileID: 21300000, guid: 8602231f95b7c459da2cf0bd5bb1bc5b, type: 3}
+    fear: {fileID: 21300000, guid: b1085eaf7886e4c1cb5c1852b41d1fa7, type: 3}
+    joy: {fileID: 21300000, guid: 65d54aa9763ff41a58d1dad3fd4e1239, type: 3}
+    sadness: {fileID: 21300000, guid: 14ce7eb96752f48bdb8750386b427131, type: 3}
+    surprise: {fileID: 21300000, guid: e858da825d82f401e977e0217a97f148, type: 3}
+    confused: {fileID: 21300000, guid: 5e7fe9d77374a49409e9dbe308b404bc, type: 3}
+    bewildered: {fileID: 21300000, guid: b9ee557df8304493f8a70decace5ef63, type: 3}
+  - stageId: stage_ai_terminal
+    introSprite: {fileID: 21300000, guid: 806cbec73901141168f811850bfec7f4, type: 3}
+    baseSprite: {fileID: 21300000, guid: e7d1f5a6c6d1c436e8f8bc70a9e8bc7b, type: 3}
+    anger: {fileID: 0}
+    disgust: {fileID: 0}
+    fear: {fileID: 0}
+    joy: {fileID: 0}
+    sadness: {fileID: 0}
+    surprise: {fileID: 0}
+    confused: {fileID: 0}
+    bewildered: {fileID: 0}
+  - stageId: stage_hitandrun
+    introSprite: {fileID: 21300000, guid: ba941964a49f04752b506b232aa644b9, type: 3}
+    baseSprite: {fileID: 21300000, guid: 78c4f4dee52dd4d2fb45ee9fb78a731e, type: 3}
+    anger: {fileID: 21300000, guid: 21e7d42e99c164ea0840202c1da9f915, type: 3}
+    disgust: {fileID: 21300000, guid: 70a2f57ca6c6a4cd4bbc8889abde87cf, type: 3}
+    fear: {fileID: 21300000, guid: a39f692c64eb846e4a8b8c278d688b10, type: 3}
+    joy: {fileID: 21300000, guid: afad8c42ecd2b4b79b35606e56c48a9c, type: 3}
+    sadness: {fileID: 21300000, guid: 915441bb069ae4480956d183adacf55e, type: 3}
+    surprise: {fileID: 21300000, guid: a99735a1ee1c04c089e9c68514ece2e3, type: 3}
+    confused: {fileID: 21300000, guid: 8df271c440bd142a387a6da651ae8621, type: 3}
+    bewildered: {fileID: 21300000, guid: f39f62716b25e48618f4c090de11536c, type: 3}
+  - stageId: stage_premeditated
+    introSprite: {fileID: 21300000, guid: caef82adbbbd046d5b887c7650b30f77, type: 3}
+    baseSprite: {fileID: 21300000, guid: 02286daa4cd164ddc8e1906b0d5ef50b, type: 3}
+    anger: {fileID: 21300000, guid: f86534b8ba31e41c4aec981e3f669096, type: 3}
+    disgust: {fileID: 21300000, guid: b8821e66bc8614b65947bc375a39d6ff, type: 3}
+    fear: {fileID: 21300000, guid: 365c2b8414a4c4b43b6e830131425b47, type: 3}
+    joy: {fileID: 21300000, guid: 48da2f114edc74827b47f277c6ad8e71, type: 3}
+    sadness: {fileID: 21300000, guid: b8c59cabef5e644b3b8a4920ef594a10, type: 3}
+    surprise: {fileID: 21300000, guid: aec474806245f483a880f73a9ce7af41, type: 3}
+    confused: {fileID: 21300000, guid: 71371b36adc274c6993d97e0991013e9, type: 3}
+    bewildered: {fileID: 21300000, guid: a9f83c01e6e72496298b249099ebe49a, type: 3}
+  - stageId: stage_serialkiller
+    introSprite: {fileID: 21300000, guid: ddfec2ff4f32e4c33843fa0d2958bcee, type: 3}
+    baseSprite: {fileID: 21300000, guid: a7cc5bee41b6f4bb6a99da2d376b1678, type: 3}
+    anger: {fileID: 21300000, guid: cf967776a5d73427baf0d97468466eb4, type: 3}
+    disgust: {fileID: 21300000, guid: 1dfe1c2bdb6104515a07b7075d1b91e2, type: 3}
+    fear: {fileID: 21300000, guid: 4ccad509223464450a5327284a847578, type: 3}
+    joy: {fileID: 21300000, guid: c616dc731986f4403953cae0f1cd7f20, type: 3}
+    sadness: {fileID: 0}
+    surprise: {fileID: 21300000, guid: f01fc0df2bc8947f0a228fe2ebef289f, type: 3}
+    confused: {fileID: 0}
+    bewildered: {fileID: 21300000, guid: 2e2941ee6f9444f57b6bc0500becd39b, type: 3}
+  - stageId: stage_spy_boss
+    introSprite: {fileID: 21300000, guid: f81a88e4d516f498c9c9c7ce0821e3af, type: 3}
+    baseSprite: {fileID: 21300000, guid: cd81415701449465e91e4d31b7805834, type: 3}
+    anger: {fileID: 21300000, guid: ad9c98adedfc94bca9ddacdfd0b8013b, type: 3}
+    disgust: {fileID: 21300000, guid: 470845d68ff40435181665ffb3e7099e, type: 3}
+    fear: {fileID: 21300000, guid: 9d526c4aa818045cfa7932b583186db3, type: 3}
+    joy: {fileID: 21300000, guid: 925d0726d66e94f85b61c6e8ee00d29a, type: 3}
+    sadness: {fileID: 21300000, guid: 2f422a6dd2a2a46bb8e008c159c81b24, type: 3}
+    surprise: {fileID: 21300000, guid: 99d00e99320134a8caf4b6264d11949f, type: 3}
+    confused: {fileID: 21300000, guid: c887288d981f94f498e1800c76fa930c, type: 3}
+    bewildered: {fileID: 21300000, guid: b97321e33337b43cc9d99e9d69456248, type: 3}
+  - stageId: stage_spy_janitor
+    introSprite: {fileID: 21300000, guid: e556aa868db9f41b58c0bfbffb7ce0bb, type: 3}
+    baseSprite: {fileID: 21300000, guid: 6eec3320c988a4296a41e00a0348bb69, type: 3}
+    anger: {fileID: 21300000, guid: 73dda41f6fca344cfb94b27701ea79cf, type: 3}
+    disgust: {fileID: 21300000, guid: 77352dcbf8c9640f1888db486c8a65b9, type: 3}
+    fear: {fileID: 21300000, guid: 8d3e11935a718457181d8e1ea5d7f006, type: 3}
+    joy: {fileID: 21300000, guid: 970f6cc247a37416489079c5be386ed1, type: 3}
+    sadness: {fileID: 21300000, guid: bc08ac2e9886f476a86c18fb43a4bd96, type: 3}
+    surprise: {fileID: 21300000, guid: 3f14e4d4b8a3c40b0927757da3321b46, type: 3}
+    confused: {fileID: 21300000, guid: 263d139d181964c27aebc9c4d177faf1, type: 3}
+    bewildered: {fileID: 21300000, guid: bc2236596931c44b1a5a35daca806de3, type: 3}
+  - stageId: stage_spy_president
+    introSprite: {fileID: 21300000, guid: eb7c134a370094515bdd4f8e6a0b1186, type: 3}
+    baseSprite: {fileID: 21300000, guid: b797d54acbffd477e841fdaacb20d0d4, type: 3}
+    anger: {fileID: 21300000, guid: eede2a2abdd9248709f6c2c385aa7fd7, type: 3}
+    disgust: {fileID: 21300000, guid: 7c0b2508c41fd4859ae5b4d08dcc9dec, type: 3}
+    fear: {fileID: 21300000, guid: f84d678f1277242b99d387f22e0b28a6, type: 3}
+    joy: {fileID: 21300000, guid: 8012ce99173d44ea39cc626a5f9c1859, type: 3}
+    sadness: {fileID: 21300000, guid: 8d3973150c78a487b9553a13ca05568c, type: 3}
+    surprise: {fileID: 21300000, guid: d9359c4349e234318bb89175c2e85792, type: 3}
+    confused: {fileID: 21300000, guid: 8551cbc8a31c244d19bdc1cc8d3d7e3f, type: 3}
+    bewildered: {fileID: 21300000, guid: e0252e232e0ec4d0cb9979348ce0cdc4, type: 3}
