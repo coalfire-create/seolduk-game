@@ -312,16 +312,29 @@ namespace Persuasion.Core
                 }
             }
 
+            // 설득도 구간별 저항 계수 — GPT가 너무 관대하게 채점해도 코드에서 상한 보정
+            // 후반부로 갈수록 캐릭터가 굳어져 같은 발화도 효과가 줄어드는 구조
+            int effectiveDelta = response.persuasionDelta;
+            if (effectiveDelta > 0)
+            {
+                float resistance = 1f;
+                if      (Persuasion >= 80) resistance = 0.35f;
+                else if (Persuasion >= 60) resistance = 0.60f;
+                else if (Persuasion >= 40) resistance = 0.80f;
+                effectiveDelta = Mathf.Max(1, Mathf.RoundToInt(effectiveDelta * resistance));
+            }
+            Debug.Log($"[DELTA] raw={response.persuasionDelta} effective={effectiveDelta} persuasion={Persuasion}%");
+
             // 목표 정보를 실제로 자백/실토하면 설득도와 무관하게 즉시 100%로 간주
             if (response.goalAchieved)
                 Persuasion = 100;
             else
-                Persuasion = Mathf.Clamp(Persuasion + response.persuasionDelta, 0, 100);
+                Persuasion = Mathf.Clamp(Persuasion + effectiveDelta, 0, 100);
             TurnCount++;
 
-            if (response.persuasionDelta > 0 && response.persuasionDelta > BestPersuasionDelta)
+            if (effectiveDelta > 0 && effectiveDelta > BestPersuasionDelta)
             {
-                BestPersuasionDelta = response.persuasionDelta;
+                BestPersuasionDelta = effectiveDelta;
                 BestPlayerText = _pendingPlayerText;
             }
 
@@ -418,17 +431,47 @@ namespace Persuasion.Core
                 sb.AppendLine("\"hint\" 필드는 빈 문자열로 두세요.");
             }
 
-            sb.AppendLine("다음 JSON 스키마로만 응답하세요: {\"dialogue\": string, \"emotion\": \"Anger|Disgust|Fear|Joy|Sadness|Surprise|Confused|Bewildered\", \"gesture\": string, \"persuasionDelta\": int, \"hint\": string, \"unlocked_evidence\": string, \"goalAchieved\": boolean}");
-            sb.AppendLine("persuasionDelta 채점 원칙: 오직 플레이어의 발화가 '이 캐릭터에게 실제로 통하는 설득 포인트(위 캐릭터 성격에 적힌 공략 방향·약점·감정 트리거)'를 짚었을 때만 설득도를 올리세요.");
-            sb.AppendLine("- 핵심 급소를 정확하고 강력하게 파고든 크리티컬한 설득: +25~+40 (한 방에 크게 상승)");
-            sb.AppendLine("- 올바른 방향으로 효과적으로 설득: +12~+22");
-            sb.AppendLine("- 방향은 맞지만 약하거나 두루뭉술함: +3~+8");
+            // 증거 해금 명세: GPT가 임의 ID를 생성하지 못하도록 가능한 ID를 명시
+            var stageEvs = stage.evidences;
+            if (stageEvs != null && stageEvs.Length > 0)
+            {
+                sb.AppendLine("이 스테이지에서 해금 가능한 증거 목록 (플레이어 발화가 정확히 해당 조건을 충족할 때만 반환, 그 외 빈 문자열):");
+                foreach (var ev in stageEvs)
+                    sb.AppendLine("  - evidenceId=\"" + ev.evidenceId + "\": " + ev.evidenceDescription + " | 해금 조건: " + ev.unlockTag);
+                sb.AppendLine("unlocked_evidence에는 위 evidenceId 중 하나 또는 빈 문자열만 넣으세요. 다른 값은 절대 안 됩니다.");
+            }
+            else
+            {
+                sb.AppendLine("unlocked_evidence는 항상 빈 문자열(\"\")로 두세요.");
+            }
+
+            sb.AppendLine("다음 JSON 스키마로만 응답하세요:");
+            sb.AppendLine("{\"dialogue\": string (캐릭터 대사, 200자 이내),");
+            sb.AppendLine(" \"emotion\": \"Anger|Disgust|Fear|Joy|Sadness|Surprise|Confused|Bewildered\",");
+            sb.AppendLine(" \"gesture\": string (캐릭터 짧은 몸짓 묘사, 한국어 15자 이내. 예: '팔짱을 낀다'),");
+            sb.AppendLine(" \"persuasionDelta\": int,");
+            sb.AppendLine(" \"hint\": string,");
+            sb.AppendLine(" \"unlocked_evidence\": string,");
+            sb.AppendLine(" \"goalAchieved\": boolean}");
+            sb.AppendLine("persuasionDelta 채점 원칙: 오직 플레이어의 발화가 '이 캐릭터에게 실제로 통하는 설득 포인트(위 캐릭터 성격에 적힌 공략 방향·약점·감정 트리거)'를 정확히 짚었을 때만 설득도를 올리세요.");
+            sb.AppendLine("- 핵심 급소를 정확하고 강력하게 파고든 크리티컬한 설득: +15~+22");
+            sb.AppendLine("- 올바른 방향으로 효과적으로 설득: +7~+13");
+            sb.AppendLine("- 방향은 맞지만 약하거나 두루뭉술함: +2~+5");
             sb.AppendLine("- 목표·설득과 무관한 일반적 질문/잡담/영양가 없는 말(예: '무슨 일 있으셨어요?', '안녕하세요'): 0 (절대 올리지 마세요)");
             sb.AppendLine("- 위협·협박성 발언('콩밥먹게 해줄게', '감옥 보낼 수 있어', '다 알고 있어' 류의 직접적 위협): 반드시 음수(-8~-15). 협박은 캐릭터를 더 닫히게 만든다.");
             sb.AppendLine("- 욕설·모욕·인신공격: 반드시 음수(-10~-20)");
             sb.AppendLine("- 이전에 이미 한 말과 거의 같거나 동일한 말의 반복: 반드시 음수(-8~-12). 같은 말 반복은 효과가 없다.");
             sb.AppendLine("- 자음/모음의 무의미한 반복(ㅇㅈㄹ, ㅋㅋ, ㅎㅎ 등), 문장 부호(~, !, ? 등) 남발, 내용 없는 맞장구: 반드시 0 또는 음수. 절대 설득도를 올리지 마세요.");
             sb.AppendLine("그냥 말을 걸거나 질문했다는 이유만으로는 절대 설득도를 올리지 마세요. 반드시 설득이 먹히는 지점을 실제로 짚었을 때만, 그 정확도와 위력에 비례해 올리세요.");
+
+            // 설득도 구간별 저항 강화 지시
+            if (Persuasion >= 80)
+                sb.AppendLine("[후반 저항] 현재 설득도가 80% 이상입니다. 캐릭터가 마지막 방어선을 치며 격렬히 저항합니다. 어지간한 발화로는 절대 흔들리지 않습니다. 핵심 급소를 완벽하게 짚지 않는 한 persuasionDelta는 +5를 넘기지 마세요. 조금이라도 빈틈 있으면 0 또는 음수.");
+            else if (Persuasion >= 60)
+                sb.AppendLine("[중반 저항] 현재 설득도가 60% 이상입니다. 캐릭터가 점점 경계하며 방어적으로 굳어집니다. 같은 수준의 발화도 이전보다 효과가 줄어듭니다. persuasionDelta 상한을 +10 이하로 유지하세요. 웬만해선 흔들리지 않는 표정을 보여주세요.");
+            else if (Persuasion >= 40)
+                sb.AppendLine("[주의 단계] 현재 설득도가 40% 이상입니다. 캐릭터가 살짝 동요하기 시작했지만 아직 쉽게 무너지지 않습니다. persuasionDelta 상한을 +13 이하로 유지하세요.");
+
             sb.AppendLine("자백 시점: 설득도가 100%에 도달할 때(현재 설득도 + 이번 persuasionDelta ≥ 100) 캐릭터가 완전히 무너져 목표(goal)의 핵심 정보를 자백/실토/공개하는 dialogue를 내고 goalAchieved를 true로 하세요. 100% 전에는 핵심 정보를 완전히 털어놓지 말고(설득이 쌓이는 과정의 반응만), goalAchieved는 false로 두세요.");
             return sb.ToString();
         }

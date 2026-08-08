@@ -17,7 +17,7 @@ namespace Persuasion.AI
     public class NPCResponse
     {
         public string dialogue;
-        public string emotion;          // Anger|Disgust|Fear|Joy|Sadness|Surprise|Confused
+        public string emotion;          // Anger|Disgust|Fear|Joy|Sadness|Surprise|Confused|Bewildered
         public string gesture;          // 자유 텍스트: 팔짱 끼기/손 떨림/책상 두드림 등
         public int persuasionDelta;
         public string hint;             // 설득도 임계치 이상일 때만 채워짐 (캐릭터 대사 아님, UI 힌트 영역용)

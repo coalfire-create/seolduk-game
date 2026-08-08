@@ -2,7 +2,7 @@
 // Netlify Functions 버전에서 이식 (req/res 패턴으로 변환)
 
 const MODEL         = 'gpt-4.1';
-const MAX_TOKENS    = 500;
+const MAX_TOKENS    = 1000;
 // 긴 취조 대화(수십 턴)에서도 막히지 않도록 넉넉히. gpt-4.1은 대용량 컨텍스트라 여유.
 const MAX_MESSAGES  = 200;
 const MAX_MSG_LEN   = 8000;
@@ -50,7 +50,7 @@ export default async function handler(req, res) {
     max_tokens: MAX_TOKENS,
     temperature: (typeof payload.temperature === 'number')
       ? Math.min(Math.max(payload.temperature, 0), 1.2)
-      : 0.9,
+      : 0.7,
   };
 
   try {
