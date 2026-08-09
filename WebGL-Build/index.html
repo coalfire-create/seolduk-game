@@ -33,14 +33,7 @@
           return _origPD.call(this);
         };
 
-        // 3. Canvas auto-focus: itch.io iframe 포커스 지원.
-        document.addEventListener('pointerdown', function() {
-          if (window._korOverlayActive) return;
-          var c = document.querySelector('#unity-canvas') || document.querySelector('canvas');
-          if (c) c.focus();
-        }, true);
-
-        // 4. Redirect canvas focus to textarea when Korean overlay is active.
+        // 3. Redirect canvas focus to textarea when Korean overlay is active.
         //    Registered before Unity loads (capture phase) so it fires first.
         document.addEventListener('focus', function(e) {
           if (!window._korOverlayActive) return;
@@ -52,6 +45,14 @@
             var ta = document.getElementById('kor-ime');
             if (ta) ta.focus();
           }
+        }, true);
+
+        // 4. Canvas auto-focus: itch.io iframe 포커스 지원.
+        //    Korean overlay 가 없을 때 click/tap 시 canvas 에 포커스를 부여한다.
+        document.addEventListener('pointerdown', function() {
+          if (window._korOverlayActive) return;
+          var c = document.querySelector('#unity-canvas') || document.querySelector('canvas');
+          if (c) c.focus();
         }, true);
 
         // AUDIO-FIX: Unity 6 WebGL + itch.io iframe 오디오 언락
@@ -71,10 +72,8 @@
             _ctxList.forEach(function(c) {
               try { if (c.state === 'suspended') c.resume(); } catch(e) {}
             });
-            // Unity 6 전역 경로
             if (window.WEBAudio && window.WEBAudio.audioContext)
               try { window.WEBAudio.audioContext.resume(); } catch(e) {}
-            // 구버전 Module 경로
             var ui = window.unityInstance, m = ui && ui.Module;
             if (m) {
               try { if (m.ctx) m.ctx.resume(); } catch(e) {}
@@ -84,7 +83,6 @@
           ['pointerdown','click','keydown','touchstart'].forEach(function(evt) {
             document.addEventListener(evt, resumeAll, true);
           });
-          // 폴링: Unity 로드 완료 후 5초부터 0.5초마다 자동 재개 시도 (30초간)
           setTimeout(function() {
             var t = setInterval(function() { resumeAll(); }, 500);
             setTimeout(function() { clearInterval(t); }, 30000);
