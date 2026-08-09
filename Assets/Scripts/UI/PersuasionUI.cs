@@ -189,11 +189,11 @@ namespace Persuasion.UI
 
             // 스토리 보기 / 특징 보기 / 대화 기록 / 메뉴 / 게임 설명서
             if (storyPeekButton != null) storyPeekButton.onClick.AddListener(OnClickStoryPeek);
-            if (traitButton != null) traitButton.onClick.AddListener(OpenTraitPanel);
+            if (traitButton != null) traitButton.onClick.AddListener(() => { if (traitPanel != null && traitPanel.activeSelf) CloseTraitPanel(); else OpenTraitPanel(); });
             if (traitCloseButton != null) traitCloseButton.onClick.AddListener(CloseTraitPanel);
-            if (historyButton != null) historyButton.onClick.AddListener(OpenHistory);
+            if (historyButton != null) historyButton.onClick.AddListener(() => { if (historyPanel != null && historyPanel.activeSelf) CloseHistory(); else OpenHistory(); });
             if (historyCloseButton != null) historyCloseButton.onClick.AddListener(CloseHistory);
-            if (menuButton != null) menuButton.onClick.AddListener(OpenMenu);
+            if (menuButton != null) menuButton.onClick.AddListener(() => { if (menuPanel != null && menuPanel.activeSelf) CloseMenu(); else OpenMenu(); });
             if (introMenuButton != null) introMenuButton.onClick.AddListener(OpenMenu);
             if (introQuitButton != null) introQuitButton.onClick.AddListener(QuitGame);
             if (menuCloseButton != null) menuCloseButton.onClick.AddListener(CloseMenu);
@@ -244,10 +244,47 @@ namespace Persuasion.UI
             if (historyPanel != null) historyPanel.SetActive(false);
             if (menuPanel != null) menuPanel.SetActive(false);
             if (guidePanel != null) guidePanel.SetActive(false);
-            if (guidePanel != null) guidePanel.SetActive(false);
             if (leaderboardPanel != null) leaderboardPanel.SetActive(false);
             if (evidenceContainer != null) evidenceContainer.gameObject.SetActive(false);
             ShowOnly(introPanel);
+        }
+
+        private void EnsureDynamicCloseButton(GameObject panel, UnityEngine.Events.UnityAction closeAction)
+        {
+            if (panel == null) return;
+            if (panel.transform.Find("DynamicCloseBtn") != null) return;
+
+            var go = new GameObject("DynamicCloseBtn");
+            go.transform.SetParent(panel.transform, false);
+            // 마지막 자식으로 보내어 최상단에 렌더링되게 함
+            go.transform.SetAsLastSibling();
+
+            var rect = go.AddComponent<RectTransform>();
+            rect.anchorMin = new Vector2(1, 1);
+            rect.anchorMax = new Vector2(1, 1);
+            rect.pivot = new Vector2(1, 1);
+            rect.anchoredPosition = new Vector2(-30, -30);
+            rect.sizeDelta = new Vector2(120, 50);
+
+            var img = go.AddComponent<UnityEngine.UI.Image>();
+            img.color = new Color(0.1f, 0.1f, 0.1f, 0.9f);
+
+            var btn = go.AddComponent<UnityEngine.UI.Button>();
+            btn.onClick.AddListener(closeAction);
+
+            var txtGo = new GameObject("Text");
+            txtGo.transform.SetParent(go.transform, false);
+            var txtRect = txtGo.AddComponent<RectTransform>();
+            txtRect.anchorMin = Vector2.zero;
+            txtRect.anchorMax = Vector2.one;
+            txtRect.sizeDelta = Vector2.zero;
+
+            var txt = txtGo.AddComponent<TMPro.TextMeshProUGUI>();
+            txt.text = "닫기 X";
+            txt.color = Color.white;
+            txt.alignment = TMPro.TextAlignmentOptions.Center;
+            txt.fontSize = 24;
+            txt.fontStyle = TMPro.FontStyles.Bold;
         }
 
         private void OpenTraitPanel()
@@ -352,6 +389,7 @@ namespace Persuasion.UI
                         $"  • <b>{lblGoal}</b> : {stage.goal}";
                 }
             }
+            EnsureDynamicCloseButton(traitPanel, CloseTraitPanel);
             traitPanel.SetActive(true);
         }
 
@@ -937,6 +975,7 @@ namespace Persuasion.UI
                 if (cb != null) cb.SetText(e.text);
             }
 
+            EnsureDynamicCloseButton(historyPanel, CloseHistory);
             historyPanel.SetActive(true);
             Canvas.ForceUpdateCanvases();
             if (historyScrollRect != null) historyScrollRect.verticalNormalizedPosition = 1f; // 위(처음)부터
@@ -1010,6 +1049,7 @@ namespace Persuasion.UI
                 if (sfxSlider   != null) sfxSlider.SetValueWithoutNotify(am.SfxVolume01);
                 if (voiceSlider != null) voiceSlider.SetValueWithoutNotify(am.VoiceVolume01);
             }
+            EnsureDynamicCloseButton(menuPanel, CloseMenu);
             menuPanel.SetActive(true);
         }
 

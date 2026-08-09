@@ -325,11 +325,16 @@ namespace Persuasion.Core
             }
             Debug.Log($"[DELTA] raw={response.persuasionDelta} effective={effectiveDelta} persuasion={Persuasion}%");
 
-            // 목표 정보를 실제로 자백/실토하면 설득도와 무관하게 즉시 100%로 간주
-            if (response.goalAchieved)
+            // 목표 정보를 실제로 자백/실토하면 즉시 100%로 간주.
+            // 단, 설득도 80% 미만에서 GPT가 goalAchieved=true를 조기 반환하는 오작동 방어:
+            // 80% 미만이면 goalAchieved를 무시하고 delta만 적용(스테이지가 너무 일찍 끝나는 버그 차단).
+            if (response.goalAchieved && Persuasion >= 80)
                 Persuasion = 100;
             else
+            {
+                if (response.goalAchieved) response.goalAchieved = false; // 조기 발동 무효화
                 Persuasion = Mathf.Clamp(Persuasion + effectiveDelta, 0, 100);
+            }
             TurnCount++;
 
             if (effectiveDelta > 0 && effectiveDelta > BestPersuasionDelta)
@@ -457,9 +462,9 @@ namespace Persuasion.Core
             sb.AppendLine("- 핵심 급소를 정확하고 강력하게 파고든 크리티컬한 설득: +15~+22");
             sb.AppendLine("- 올바른 방향으로 효과적으로 설득: +7~+13");
             sb.AppendLine("- 방향은 맞지만 약하거나 두루뭉술함: +2~+5");
-            sb.AppendLine("- 목표·설득과 무관한 일반적 질문/잡담/영양가 없는 말(예: '무슨 일 있으셨어요?', '안녕하세요'): 0 (절대 올리지 마세요)");
-            sb.AppendLine("- 위협·협박성 발언('콩밥먹게 해줄게', '감옥 보낼 수 있어', '다 알고 있어' 류의 직접적 위협): 반드시 음수(-8~-15). 협박은 캐릭터를 더 닫히게 만든다.");
-            sb.AppendLine("- 욕설·모욕·인신공격: 반드시 음수(-10~-20)");
+            sb.AppendLine("- 목표·설득과 무관한 일반적 잡담/영양가 없는 말: 0 (올리지 마세요). 단, 이 캐릭터의 성격에 '잡담·라포·친밀감'이 공략법으로 명시되어 있다면, 자연스럽고 진짜 라포를 쌓는 사담은 소폭 양수(+2~+5) 가능.");
+            sb.AppendLine("- 위협·협박성 발언: 일반적으로 반드시 음수(-8~-15). 단, 이 캐릭터의 성격에 '협박·갈구기·윽박·강압이 급소'라고 명시된 경우에 한해 예외적으로 크게 양수(+7~+15) 가능.");
+            sb.AppendLine("- 욕설·모욕·인신공격: 일반적으로 반드시 음수(-10~-20). 단, 위와 동일하게 캐릭터 성격에 그것이 급소로 명시된 경우 예외.");
             sb.AppendLine("- 이전에 이미 한 말과 거의 같거나 동일한 말의 반복: 반드시 음수(-8~-12). 같은 말 반복은 효과가 없다.");
             sb.AppendLine("- 자음/모음의 무의미한 반복(ㅇㅈㄹ, ㅋㅋ, ㅎㅎ 등), 문장 부호(~, !, ? 등) 남발, 내용 없는 맞장구: 반드시 0 또는 음수. 절대 설득도를 올리지 마세요.");
             sb.AppendLine("그냥 말을 걸거나 질문했다는 이유만으로는 절대 설득도를 올리지 마세요. 반드시 설득이 먹히는 지점을 실제로 짚었을 때만, 그 정확도와 위력에 비례해 올리세요.");
@@ -472,7 +477,7 @@ namespace Persuasion.Core
             else if (Persuasion >= 40)
                 sb.AppendLine("[주의 단계] 현재 설득도가 40% 이상입니다. 캐릭터가 살짝 동요하기 시작했지만 아직 쉽게 무너지지 않습니다. persuasionDelta 상한을 +13 이하로 유지하세요.");
 
-            sb.AppendLine("자백 시점: 설득도가 100%에 도달할 때(현재 설득도 + 이번 persuasionDelta ≥ 100) 캐릭터가 완전히 무너져 목표(goal)의 핵심 정보를 자백/실토/공개하는 dialogue를 내고 goalAchieved를 true로 하세요. 100% 전에는 핵심 정보를 완전히 털어놓지 말고(설득이 쌓이는 과정의 반응만), goalAchieved는 false로 두세요.");
+            sb.AppendLine($"자백 시점: 현재 설득도({Persuasion}%) + 이번 persuasionDelta ≥ 100이고, 동시에 현재 설득도가 반드시 80% 이상일 때만 goalAchieved=true로 하세요. 설득도 80% 미만에서는 어떤 경우에도 goalAchieved를 절대 true로 반환하지 마세요. 100% 전에는 핵심 정보를 완전히 털어놓지 말고(설득이 쌓이는 과정의 반응만), goalAchieved=false를 유지하세요.");
             return sb.ToString();
         }
     }
