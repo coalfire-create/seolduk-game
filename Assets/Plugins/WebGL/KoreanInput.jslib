@@ -156,6 +156,14 @@ mergeInto(LibraryManager.library, {
         window._korImeWrap.style.display = 'none';
         var ta = window._korIme;
         if (ta) { ta.blur(); ta.value = ''; }
+        // Unity 6 에서 canvas focus 없이는 keyboard event 수신 불가 → 명시적으로 재포커스
+        var canvas = document.querySelector('#unity-canvas') || document.querySelector('canvas');
+        if (canvas) canvas.focus();
+    },
+
+    KorIme_FocusCanvas: function() {
+        var canvas = document.querySelector('#unity-canvas') || document.querySelector('canvas');
+        if (canvas) requestAnimationFrame(function() { canvas.focus(); });
     },
 
     KorIme_Clear: function() {

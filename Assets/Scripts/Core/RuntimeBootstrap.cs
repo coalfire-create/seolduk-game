@@ -1,4 +1,7 @@
 using UnityEngine;
+#if UNITY_WEBGL && !UNITY_EDITOR
+using System.Runtime.InteropServices;
+#endif
 
 namespace Persuasion.Core
 {
@@ -9,6 +12,12 @@ namespace Persuasion.Core
     /// </summary>
     public static class RuntimeBootstrap
     {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // Unity 6에서 WebGLInput.captureAllKeyboardInput 이 제거됐다.
+        // 대신 KoreanInput.jslib의 KorIme_FocusCanvas로 캔버스에 명시적 포커스를 부여한다.
+        [DllImport("__Internal")] private static extern void KorIme_FocusCanvas();
+#endif
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void EnsureRunInBackground()
         {
@@ -16,8 +25,7 @@ namespace Persuasion.Core
             Application.runInBackground = true;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-            // WebGLInput has been removed/changed in Unity 6000.
-            // Keeping this empty to avoid compilation errors.
+            KorIme_FocusCanvas();
 #endif
         }
 

@@ -21,20 +21,26 @@
         window.addEventListener('keydown', onKey, true);
         window.addEventListener('keyup',   onKey, true);
 
-        // ── 2. Prevent Unity from calling e.preventDefault() during Korean IME composition.
-        //    Unity's window-level capture handler may call preventDefault() on keydown events,
-        //    which cancels IME composition on Windows Chrome/Edge. We patch it out during composition.
+        // ── 2. Unity 6 의 window-level capture handler 가 kor-ime 를 타깃으로 한
+        //    keydown/keyup/keypress 에 preventDefault() 를 호출하면 영어·한글 입력이 차단된다.
+        //    kor-ime 가 타깃인 키 이벤트에서는 무조건 preventDefault() 를 무시한다.
         var _origPD = Event.prototype.preventDefault;
         Event.prototype.preventDefault = function() {
-          if (window._korComposing &&
-              (this.type === 'keydown' || this.type === 'keyup' || this.type === 'keypress') &&
+          if ((this.type === 'keydown' || this.type === 'keyup' || this.type === 'keypress') &&
               this.target && this.target.id === 'kor-ime') {
-            return; // Do NOT cancel IME composition keystrokes
+            return;
           }
           return _origPD.call(this);
         };
 
-        // ── 3. Redirect canvas focus → textarea when overlay is active.
+        // ── 3. Canvas auto-focus: itch.io iframe 포커스 지원.
+        document.addEventListener('pointerdown', function() {
+          if (window._korOverlayActive) return;
+          var c = document.querySelector('#unity-canvas') || document.querySelector('canvas');
+          if (c) c.focus();
+        }, true);
+
+        // ── 4. Redirect canvas focus → textarea when overlay is active.
         //    Registered in capture phase BEFORE Unity loads, so it fires first.
         //    This catches Unity internally calling canvas.focus() mid-frame.
         document.addEventListener('focus', function(e) {
@@ -51,16 +57,41 @@
         }, true); // capture phase
       })();
 
-      // AUDIO-FIX: 최초 사용자 입력 시 WebAudio 컨텍스트를 resume (모바일/사파리 자동재생 차단 대응)
+      // AUDIO-FIX: Unity 6 WebGL + itch.io iframe 오디오 언락
+      // AudioContext 생성자를 인터셉트해 어떤 경로로 만들어지든 추적 후 재개
       (function() {
-        function resumeCtx(ctx) { try { if (ctx && ctx.state === 'suspended') ctx.resume(); } catch (e) {} }
-        function unlockAudio() {
+        var _ctxList = [];
+        var OrigAC = window.AudioContext || window.webkitAudioContext;
+        if (OrigAC) {
+          var PatchedAC = function(opts) {
+            var c = new OrigAC(opts); _ctxList.push(c); return c;
+          };
+          PatchedAC.prototype = OrigAC.prototype;
+          window.AudioContext = PatchedAC;
+          if (window.webkitAudioContext) window.webkitAudioContext = PatchedAC;
+        }
+        function resumeAll() {
+          _ctxList.forEach(function(c) {
+            try { if (c.state === 'suspended') c.resume(); } catch(e) {}
+          });
+          // Unity 6 전역 경로
+          if (window.WEBAudio && window.WEBAudio.audioContext)
+            try { window.WEBAudio.audioContext.resume(); } catch(e) {}
+          // 구버전 Module 경로
           var ui = window.unityInstance, m = ui && ui.Module;
-          if (m) { resumeCtx(m.ctx); if (m.WEBAudio) resumeCtx(m.WEBAudio.audioContext); }
+          if (m) {
+            try { if (m.ctx) m.ctx.resume(); } catch(e) {}
+            try { if (m.WEBAudio && m.WEBAudio.audioContext) m.WEBAudio.audioContext.resume(); } catch(e) {}
+          }
         }
         ['pointerdown','click','keydown','touchstart'].forEach(function(evt) {
-          document.addEventListener(evt, unlockAudio, true);
+          document.addEventListener(evt, resumeAll, true);
         });
+        // 폴링: Unity 로드 완료 후 5초부터 0.5초마다 자동 재개 시도 (30초간)
+        setTimeout(function() {
+          var t = setInterval(function() { resumeAll(); }, 500);
+          setTimeout(function() { clearInterval(t); }, 30000);
+        }, 5000);
       })();
     </script>
     </head>
@@ -143,6 +174,7 @@
           document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
         }).then((unityInstance) => {
           window.unityInstance = unityInstance;
+          var _c = document.querySelector('#unity-canvas') || document.querySelector('canvas'); if (_c) _c.focus();
           document.querySelector("#unity-loading-bar").style.display = "none";
           document.querySelector("#unity-fullscreen-button").onclick = () => {
             unityInstance.SetFullscreen(1);

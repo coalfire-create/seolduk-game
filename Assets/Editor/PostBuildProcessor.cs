@@ -121,13 +121,12 @@ $@"<!-- GA4 -->
         window.addEventListener('keydown', onKey, true);
         window.addEventListener('keyup',   onKey, true);
 
-        // 2. Prevent Unity from calling e.preventDefault() during Korean IME composition.
-        //    Unity's window-level capture handler may call preventDefault() on keydown events,
-        //    which cancels IME composition on Windows Chrome/Edge.
+        // 2. Unity 6 의 window-level capture handler 가 kor-ime 를 타깃으로 한
+        //    keydown/keyup/keypress 에 preventDefault() 를 호출하면 영어·한글 입력이 차단된다.
+        //    kor-ime 가 타깃인 키 이벤트에서는 무조건 preventDefault() 를 무시한다.
         var _origPD = Event.prototype.preventDefault;
         Event.prototype.preventDefault = function() {
-          if (window._korComposing &&
-              (this.type === 'keydown' || this.type === 'keyup' || this.type === 'keypress') &&
+          if ((this.type === 'keydown' || this.type === 'keyup' || this.type === 'keypress') &&
               this.target && this.target.id === 'kor-ime') {
             return;
           }
@@ -148,16 +147,46 @@ $@"<!-- GA4 -->
           }
         }, true);
 
-        // AUDIO-FIX: resume WebAudio context on first user interaction
+        // 4. Canvas auto-focus: itch.io iframe 포커스 지원.
+        //    Korean overlay 가 없을 때 click/tap 시 canvas 에 포커스를 부여한다.
+        document.addEventListener('pointerdown', function() {
+          if (window._korOverlayActive) return;
+          var c = document.querySelector('#unity-canvas') || document.querySelector('canvas');
+          if (c) c.focus();
+        }, true);
+
+        // AUDIO-FIX: Unity 6 WebGL + itch.io iframe 오디오 언락
+        // AudioContext 생성자를 인터셉트해 어떤 경로로 만들어지든 추적 후 재개
         (function() {
-          function resumeCtx(ctx) { try { if (ctx && ctx.state === 'suspended') ctx.resume(); } catch (e) {} }
-          function unlockAudio() {
+          var _ctxList = [];
+          var OrigAC = window.AudioContext || window.webkitAudioContext;
+          if (OrigAC) {
+            var PatchedAC = function(opts) {
+              var c = new OrigAC(opts); _ctxList.push(c); return c;
+            };
+            PatchedAC.prototype = OrigAC.prototype;
+            window.AudioContext = PatchedAC;
+            if (window.webkitAudioContext) window.webkitAudioContext = PatchedAC;
+          }
+          function resumeAll() {
+            _ctxList.forEach(function(c) {
+              try { if (c.state === 'suspended') c.resume(); } catch(e) {}
+            });
+            if (window.WEBAudio && window.WEBAudio.audioContext)
+              try { window.WEBAudio.audioContext.resume(); } catch(e) {}
             var ui = window.unityInstance, m = ui && ui.Module;
-            if (m) { resumeCtx(m.ctx); if (m.WEBAudio) resumeCtx(m.WEBAudio.audioContext); }
+            if (m) {
+              try { if (m.ctx) m.ctx.resume(); } catch(e) {}
+              try { if (m.WEBAudio && m.WEBAudio.audioContext) m.WEBAudio.audioContext.resume(); } catch(e) {}
+            }
           }
           ['pointerdown','click','keydown','touchstart'].forEach(function(evt) {
-            document.addEventListener(evt, unlockAudio, true);
+            document.addEventListener(evt, resumeAll, true);
           });
+          setTimeout(function() {
+            var t = setInterval(function() { resumeAll(); }, 500);
+            setTimeout(function() { clearInterval(t); }, 30000);
+          }, 5000);
         })();
       })();
     </script>
@@ -179,7 +208,7 @@ $@"<!-- GA4 -->
 
             // createUnityInstance().then((unityInstance) => { 다음 줄에 삽입
             const string anchor  = "}).then((unityInstance) => {";
-            const string inject  = "}).then((unityInstance) => {\n                window.unityInstance = unityInstance;";
+            const string inject  = "}).then((unityInstance) => {\n                window.unityInstance = unityInstance;\n                var _c = document.querySelector('#unity-canvas') || document.querySelector('canvas'); if (_c) _c.focus();";
             if (!html.Contains(anchor)) { Debug.LogWarning("[PostBuild] then 블록을 찾지 못해 window.unityInstance 삽입 생략"); return; }
             html = html.Replace(anchor, inject);
             File.WriteAllText(indexPath, html);
