@@ -24,8 +24,10 @@ const publicEntries = (arr) =>
   arr.slice(0, TOP_RETURN).map(({ name, grade, turns }) => ({ name, grade, turns }));
 
 // ── Vercel KV REST API 헬퍼 (패키지 없이 fetch로 직접 호출) ──
-const KV_URL   = () => process.env.KV_REST_API_URL;
-const KV_TOKEN = () => process.env.KV_REST_API_TOKEN;
+// Vercel 네이티브 KV(KV_REST_API_*)와 Upstash 마켓플레이스(UPSTASH_REDIS_REST_*)
+// 두 경로 모두 지원 — 동일한 REST /pipeline API 라 env 이름만 다르다.
+const KV_URL   = () => process.env.KV_REST_API_URL   || process.env.UPSTASH_REDIS_REST_URL;
+const KV_TOKEN = () => process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 const kvAvailable = () => !!(KV_URL() && KV_TOKEN());
 
 async function kvGet(key) {
