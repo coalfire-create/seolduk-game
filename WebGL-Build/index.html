@@ -9,6 +9,7 @@
   <!-- KEYBOARD-FIX -->
     <script>
       (function() {
+        // 1. Block Space/Backspace/Arrow/Tab from reaching Unity when overlay is hidden
         var BLOCK = ['Space','Backspace','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'];
         function onKey(e) {
           var el = document.activeElement;
@@ -19,18 +20,45 @@
         }
         window.addEventListener('keydown', onKey, true);
         window.addEventListener('keyup',   onKey, true);
-      })();
 
-      // AUDIO-FIX
-      (function() {
-        function resumeCtx(ctx) { try { if (ctx && ctx.state === 'suspended') ctx.resume(); } catch (e) {} }
-        function unlockAudio() {
-          var ui = window.unityInstance, m = ui && ui.Module;
-          if (m) { resumeCtx(m.ctx); if (m.WEBAudio) resumeCtx(m.WEBAudio.audioContext); }
-        }
-        ['pointerdown','click','keydown','touchstart'].forEach(function(evt) {
-          document.addEventListener(evt, unlockAudio, true);
-        });
+        // 2. Prevent Unity from calling e.preventDefault() during Korean IME composition.
+        //    Unity's window-level capture handler may call preventDefault() on keydown events,
+        //    which cancels IME composition on Windows Chrome/Edge.
+        var _origPD = Event.prototype.preventDefault;
+        Event.prototype.preventDefault = function() {
+          if (window._korComposing &&
+              (this.type === 'keydown' || this.type === 'keyup' || this.type === 'keypress') &&
+              this.target && this.target.id === 'kor-ime') {
+            return;
+          }
+          return _origPD.call(this);
+        };
+
+        // 3. Redirect canvas focus to textarea when Korean overlay is active.
+        //    Registered before Unity loads (capture phase) so it fires first.
+        document.addEventListener('focus', function(e) {
+          if (!window._korOverlayActive) return;
+          var el = e.target;
+          if (!el) return;
+          if (el.tagName === 'CANVAS' || el.id === 'unity-canvas') {
+            e.stopPropagation();
+            el.blur();
+            var ta = document.getElementById('kor-ime');
+            if (ta) ta.focus();
+          }
+        }, true);
+
+        // AUDIO-FIX: resume WebAudio context on first user interaction
+        (function() {
+          function resumeCtx(ctx) { try { if (ctx && ctx.state === 'suspended') ctx.resume(); } catch (e) {} }
+          function unlockAudio() {
+            var ui = window.unityInstance, m = ui && ui.Module;
+            if (m) { resumeCtx(m.ctx); if (m.WEBAudio) resumeCtx(m.WEBAudio.audioContext); }
+          }
+          ['pointerdown','click','keydown','touchstart'].forEach(function(evt) {
+            document.addEventListener(evt, unlockAudio, true);
+          });
+        })();
       })();
     </script>
     </head>
@@ -82,9 +110,9 @@
       var loaderUrl = buildUrl + "/WebGL-Build.loader.js";
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/WebGL-Build.data.br",
-        frameworkUrl: buildUrl + "/WebGL-Build.framework.js.br",
-        codeUrl: buildUrl + "/WebGL-Build.wasm.br",
+        dataUrl: buildUrl + "/WebGL-Build.data.unityweb",
+        frameworkUrl: buildUrl + "/WebGL-Build.framework.js.unityweb",
+        codeUrl: buildUrl + "/WebGL-Build.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "DefaultCompany",
         productName: "My project",
@@ -143,6 +171,7 @@
         createUnityInstance(canvas, config, (progress) => {
           document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
               }).then((unityInstance) => {
+                window.unityInstance = unityInstance;
                 document.querySelector("#unity-loading-bar").style.display = "none";
                 document.querySelector("#unity-fullscreen-button").onclick = () => {
                   unityInstance.SetFullscreen(1);

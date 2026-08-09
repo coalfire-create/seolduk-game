@@ -159,7 +159,8 @@ namespace Persuasion.UI
         private Coroutine _apiTimeoutRoutine;
         private Coroutine _clearCoroutine;
         private Coroutine _sendLabelRoutine;
-        private const float ApiTimeoutSec = 30f;
+        private const float ApiTimeoutSec = 15f;   // 30s → 15s: 빠른 복구
+        private bool _isSending;                    // 로딩 중 여부 (취소 버튼 전환용)
         private KoreanInputBridge _korBridge;
         private Coroutine _storyTypeRoutine;    // 스토리 나래이션 타자기 효과
         private bool _storyTyping;              // 나래이션 타이핑 진행 중 여부
@@ -389,6 +390,17 @@ namespace Persuasion.UI
                         $"  • <b>{lblGoal}</b> : {stage.goal}";
                 }
             }
+            if (traitCloseButton != null)
+            {
+                var rt = traitCloseButton.GetComponent<RectTransform>();
+                if (rt != null)
+                {
+                    rt.anchorMin = new Vector2(0.5f, 0.05f);
+                    rt.anchorMax = new Vector2(0.5f, 0.05f);
+                    rt.pivot = new Vector2(0.5f, 0.5f);
+                    rt.anchoredPosition = Vector2.zero;
+                }
+            }
             EnsureDynamicCloseButton(traitPanel, CloseTraitPanel);
             traitPanel.SetActive(true);
         }
@@ -550,6 +562,9 @@ namespace Persuasion.UI
 
         private void OnClickSend()
         {
+            // 전송 중일 때 버튼 클릭 = 취소
+            if (_isSending) { CancelCurrentRequest(); return; }
+
             if (inputField == null || string.IsNullOrWhiteSpace(inputField.text)) return;
 
             string text = inputField.text;
@@ -588,14 +603,23 @@ namespace Persuasion.UI
         private IEnumerator ApiTimeoutRoutine()
         {
             yield return new WaitForSecondsRealtime(ApiTimeoutSec);
-            // LLM 요청 코루틴을 강제 중단하고 에러 처리
             manager.AbortCurrentLLMRequest();
-            HandleError("응답 시간이 초과되었습니다 (30초). 다시 입력해 주세요.");
+            HandleError($"응답 시간이 초과되었습니다 ({(int)ApiTimeoutSec}초). 다시 입력해 주세요.");
+        }
+
+        /// <summary>로딩 중 수동 취소. 전송 버튼 클릭 or 자동 타임아웃 공통 경로.</summary>
+        private void CancelCurrentRequest()
+        {
+            CancelApiTimeout();
+            manager.AbortCurrentLLMRequest();
+            HandleError("요청이 취소되었습니다. 다시 입력해 주세요.");
         }
 
         private void SetSendingState(bool sending)
         {
-            if (sendButton != null) sendButton.interactable = !sending;
+            _isSending = sending;
+            // 전송 중에도 버튼은 항상 클릭 가능 → OnClickSend에서 취소 처리
+            if (sendButton != null) sendButton.interactable = true;
             if (inputField != null) inputField.interactable = !sending;
             if (sending) _korBridge?.HideOverlay();
 
@@ -617,10 +641,13 @@ namespace Persuasion.UI
         {
             string[] frames = { "전송 중  ·", "전송 중  · ·", "전송 중  · · ·" };
             int i = 0;
+            float elapsed = 0f;
             while (true)
             {
-                lbl.text = frames[i % frames.Length];
+                // 8초 넘어가면 취소 가능 안내로 전환
+                lbl.text = elapsed > 8f ? "[ 클릭으로 취소 ]" : frames[i % frames.Length];
                 i++;
+                elapsed += 0.38f;
                 yield return new WaitForSecondsRealtime(0.38f);
             }
         }
@@ -785,24 +812,42 @@ namespace Persuasion.UI
             AppendLog(false, historyMsg);
 
             string displayDialogue = $"\"{response.dialogue.Trim()}\"";
+            bool isConfession = manager.Persuasion >= 100;
 
             // 대기 인디케이터를 실제 대사로 교체 + 타자기 효과
             var bubble = _pendingNpcBubble;
             _pendingNpcBubble = null;
+            var audioMgr = AudioManager.Instance;
             if (bubble != null)
             {
-                var audio = AudioManager.Instance;
-                if (audio != null && playPanel != null && playPanel.activeSelf)
-                    audio.PlayCharacterVoice(manager.CurrentStageIndex);
-                bubble.SetTextTyped(displayDialogue, SpeedFor(response.dialogue), PinScrollToBottom,
-                    () => { if (audio != null) audio.StopCharacterVoice(); });
+                if (audioMgr != null && playPanel != null && playPanel.activeSelf)
+                    audioMgr.PlayCharacterVoice(manager.CurrentStageIndex);
+
+                Action onTypeDone = () =>
+                {
+                    if (audioMgr != null) audioMgr.StopCharacterVoice();
+                    if (isConfession)
+                    {
+                        // 자백 확보 시스템 메시지: 타자기 완료 직후 표시
+                        AppendSystemMessage("<color=#FFE373><b>[ ✔ 자백 확보 ]</b>  끈질긴 심문 끝에 진실이 밝혀졌다.</color>");
+                        SmoothScrollToBottom();
+                    }
+                };
+                bubble.SetTextTyped(displayDialogue, SpeedFor(response.dialogue), PinScrollToBottom, onTypeDone);
             }
             else
             {
                 SpawnBubble(npcBubblePrefab, displayDialogue, typed: false);
+                if (isConfession)
+                    AppendSystemMessage("<color=#FFE373><b>[ ✔ 자백 확보 ]</b>  끈질긴 심문 끝에 진실이 밝혀졌다.</color>");
             }
 
-            if (!string.IsNullOrEmpty(response.hint))
+            // 자백 순간에는 힌트 패널 즉시 닫기
+            if (isConfession)
+            {
+                hintPanel.SetActive(false);
+            }
+            else if (!string.IsNullOrEmpty(response.hint))
             {
                 hintPanel.SetActive(true);
                 hintText.text = "[ 공략 힌트 ]  " + response.hint;
@@ -812,7 +857,7 @@ namespace Persuasion.UI
                 hintPanel.SetActive(false);
             }
 
-            if (manager.Persuasion < 100)
+            if (!isConfession)
             {
                 SetSendingState(false);
                 FocusInput();
@@ -1263,6 +1308,7 @@ namespace Persuasion.UI
                     if (openLeaderboardButton != null) openLeaderboardButton.gameObject.SetActive(false);
                     nextButton.gameObject.SetActive(false);
                     retryButton.gameObject.SetActive(false);
+                    if (resultSelectButton != null) resultSelectButton.gameObject.SetActive(true);
                     ShowOnly(resultPanel);
                     break;
             }

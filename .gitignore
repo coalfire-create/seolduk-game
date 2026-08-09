@@ -18,6 +18,10 @@ mono_crash.*
 test.cs
 WebGL-Build.zip
 
+# WebGL 빌드 바이너리 — itch.io CDN에 직접 업로드, git 추적 불필요
+*.unityweb
+WebGL-Build/My project_BurstDebugInformation_DoNotShip/
+
 # 컴파일 산출물 (스탠드얼론 빌드 3.6GB / Burst 생성물) — 소스 아님
 Builds/
 /Data/

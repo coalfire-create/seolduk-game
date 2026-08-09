@@ -36,6 +36,7 @@ namespace Persuasion.AI
         private bool   _apiKeyReady;   // 키/프록시 준비 신호
         private Coroutine _activeRequestCoroutine;
         private UnityWebRequest _activeRequest;
+        private int _requestVersion;   // Abort 후 늦은 콜백 차단용 버전 카운터
 
         private void Awake()
         {
@@ -109,18 +110,19 @@ namespace Persuasion.AI
                                        Action<NPCResponse> onSuccess, Action<string> onError)
         {
             if (_activeRequestCoroutine != null) StopCoroutine(_activeRequestCoroutine);
-            _activeRequestCoroutine = StartCoroutine(SendRequest(systemPrompt, conversation, onSuccess, onError));
+            int version = ++_requestVersion;
+            _activeRequestCoroutine = StartCoroutine(SendRequest(version, systemPrompt, conversation, onSuccess, onError));
         }
 
-        /// <summary>진행 중인 LLM 요청 코루틴을 즉시 중단한다. UI 타임아웃 발동 시 호출.</summary>
+        /// <summary>진행 중인 LLM 요청을 즉시 취소. 취소 후 늦게 도착하는 콜백은 버전 불일치로 자동 무시.</summary>
         public void AbortCurrentRequest()
         {
+            _requestVersion++;  // 버전 증가 → 진행 중 콜백이 오더라도 무시됨
             if (_activeRequestCoroutine != null)
             {
                 StopCoroutine(_activeRequestCoroutine);
                 _activeRequestCoroutine = null;
             }
-            
             if (_activeRequest != null)
             {
                 _activeRequest.Abort();
@@ -129,7 +131,7 @@ namespace Persuasion.AI
             }
         }
 
-        private IEnumerator SendRequest(string systemPrompt, IReadOnlyList<ChatTurn> conversation,
+        private IEnumerator SendRequest(int version, string systemPrompt, IReadOnlyList<ChatTurn> conversation,
                                         Action<NPCResponse> onSuccess, Action<string> onError)
         {
             // 키/프록시 준비될 때까지 대기
@@ -179,6 +181,9 @@ namespace Persuasion.AI
                 _activeRequest.Dispose();
                 _activeRequest = null;
 
+                // 버전 불일치 = Abort 이후 도착한 응답 → 조용히 버림
+                if (_requestVersion != version) { _activeRequestCoroutine = null; yield break; }
+
                 if (success)
                 {
                     NPCResponse parsed;
@@ -193,6 +198,7 @@ namespace Persuasion.AI
                 if (retriable && attempt < maxAttempts)
                 {
                     yield return new WaitForSeconds(attempt);
+                    if (_requestVersion != version) { _activeRequestCoroutine = null; yield break; } // 재시도 중 취소됐으면 중단
                     continue;
                 }
 

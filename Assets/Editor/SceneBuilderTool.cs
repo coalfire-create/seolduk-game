@@ -617,13 +617,13 @@ namespace Persuasion.EditorTools
             resultBestMoveText.rectTransform.anchorMax = new Vector2(1f, 0.65f);
             resultBestMoveText.rectTransform.offsetMin = new Vector2(22f, 0f);
             resultBestMoveText.rectTransform.offsetMax = new Vector2(-22f, 0f);
-            resultBestMoveText.enableWordWrapping = true;
+            resultBestMoveText.textWrappingMode = TMPro.TextWrappingModes.Normal;
             resultBestMoveText.fontStyle = FontStyles.Italic;
 
             // 실패 내레이션 (클리어 때는 숨김)
             var resultNarration = MkText("ResultNarration", resultPanel.transform, TYPE_BODY, TextAlignmentOptions.Center, new Color(TXT_PRIMARY.r, TXT_PRIMARY.g, TXT_PRIMARY.b, 0.88f));
             AnchorBox(resultNarration.rectTransform, new Vector2(0.5f, 0.57f), new Vector2(1200, 260));
-            resultNarration.enableWordWrapping = true;
+            resultNarration.textWrappingMode = TMPro.TextWrappingModes.Normal;
             resultNarration.lineSpacing = 8f;
 
             var nextBtn = MkButton("NextButton", resultPanel.transform, "다음 단계 ▶", out _);
@@ -729,7 +729,7 @@ namespace Persuasion.EditorTools
             sbtRt.offsetMin = new Vector2(120f, 10f); sbtRt.offsetMax = new Vector2(-120f, -42f);
             storyBeatText.fontStyle = FontStyles.Bold;
             storyBeatText.lineSpacing = 18f;
-            storyBeatText.enableWordWrapping = true;
+            storyBeatText.textWrappingMode = TMPro.TextWrappingModes.Normal;
             storyBeatText.overflowMode = TextOverflowModes.Overflow;
 
             var sbtOutline = storyBeatText.gameObject.AddComponent<Outline>();
@@ -979,7 +979,7 @@ namespace Persuasion.EditorTools
             var c1Body = MkText("Body", col1.transform, 20, TextAlignmentOptions.TopLeft, INK_TEXT);
             AnchorTopLeft(c1Body.rectTransform, new Vector2(24, -114), new Vector2(418, 510));
             c1Body.lineSpacing = 10f;
-            c1Body.enableWordWrapping = true;
+            c1Body.textWrappingMode = TMPro.TextWrappingModes.Normal;
             c1Body.fontStyle = FontStyles.Normal; // 제목(Bold)과 대비되도록 본문은 레귤러로 — 위계 강화
             c1Body.text =
                 "• 자백 유도 시스템 (System Overwhelm)\n" +
@@ -1004,7 +1004,7 @@ namespace Persuasion.EditorTools
             var c2Body = MkText("Body", col2.transform, 20, TextAlignmentOptions.TopLeft, INK_TEXT);
             AnchorTopLeft(c2Body.rectTransform, new Vector2(24, -114), new Vector2(418, 510));
             c2Body.lineSpacing = 10f;
-            c2Body.enableWordWrapping = true;
+            c2Body.textWrappingMode = TMPro.TextWrappingModes.Normal;
             c2Body.fontStyle = FontStyles.Normal;
             c2Body.text =
                 "• 맞춤형 접근 (Adaptive Profiling)\n" +
@@ -1031,7 +1031,7 @@ namespace Persuasion.EditorTools
             var c3Body = MkText("Body", col3.transform, 20, TextAlignmentOptions.TopLeft, INK_TEXT);
             AnchorTopLeft(c3Body.rectTransform, new Vector2(24, -114), new Vector2(418, 510));
             c3Body.lineSpacing = 10f;
-            c3Body.enableWordWrapping = true;
+            c3Body.textWrappingMode = TMPro.TextWrappingModes.Normal;
             c3Body.fontStyle = FontStyles.Normal;
             c3Body.text =
                 "• 저항 및 대화 단절 (Resistance)\n" +
@@ -1148,7 +1148,7 @@ namespace Persuasion.EditorTools
             // 본문 텍스트 (사진 칸 제거 → 전체 폭 사용)
             var traitText = MkText("TraitText", t_contentCard.transform, 20, TextAlignmentOptions.TopLeft, new Color(0.12f, 0.12f, 0.10f, 1.0f));
             AnchorTopLeft(traitText.rectTransform, new Vector2(24, -90), new Vector2(876, 680));
-            traitText.enableWordWrapping = true; traitText.lineSpacing = 12f;
+            traitText.textWrappingMode = TMPro.TextWrappingModes.Normal; traitText.lineSpacing = 12f;
             traitText.fontStyle = FontStyles.Normal; // 제목(Bold)과 대비
 
             // 하단 분류 띠
@@ -1173,7 +1173,7 @@ namespace Persuasion.EditorTools
 
             // 닫기 버튼
             var traitCloseBtn = MkButton("TraitCloseButton", traitBox.transform, "[ 수사 서류 확인 완료 ]\n(닫기)", out var traitCloseLbl);
-            AnchorBox(traitCloseBtn.GetComponent<RectTransform>(), new Vector2(0.5f, -0.05f), new Vector2(400, 72));
+            AnchorBox(traitCloseBtn.GetComponent<RectTransform>(), new Vector2(0.5f, 0.05f), new Vector2(400, 64));
             traitCloseLbl.fontSize = 20; traitCloseLbl.fontStyle = FontStyles.Bold;
             BtnColor(traitCloseBtn, new Color(0.7f, 0.72f, 0.74f, 1.0f)); // Metallic button
             if (traitCloseBtn.transform.Find("Border") != null) traitCloseBtn.transform.Find("Border").GetComponent<Image>().color = new Color(0.4f, 0.4f, 0.4f, 1f);
@@ -1644,7 +1644,7 @@ namespace Persuasion.EditorTools
             t.alignment           = align;
             t.color               = color;
             t.text                = "";
-            t.enableWordWrapping  = true;
+            t.textWrappingMode = TMPro.TextWrappingModes.Normal;
             t.overflowMode        = TextOverflowModes.Overflow;
             t.raycastTarget       = false;
             return t;
@@ -1874,7 +1874,7 @@ namespace Persuasion.EditorTools
                 if (_font != null) t.font = _font;
                 t.fontSize = TYPE_BODY;
                 t.color = TXT_PRIMARY;
-                t.enableWordWrapping = true;
+                t.textWrappingMode = TMPro.TextWrappingModes.Normal;
             }
             if (input.placeholder is TextMeshProUGUI ph)
             {
@@ -1953,13 +1953,6 @@ namespace Persuasion.EditorTools
             Wire(sb, "lockOverlay", lockGO);
 
             return go;
-
-            if (!System.IO.Directory.Exists(Application.dataPath + "/Prefabs"))
-                AssetDatabase.CreateFolder("Assets", "Prefabs");
-            string path = "Assets/Prefabs/" + name + ".prefab";
-            var prefab = PrefabUtility.SaveAsPrefabAsset(go, path);
-            Object.DestroyImmediate(go);
-            return prefab;
         }
 
         private static GameObject CreateBubblePrefab(string name, bool isPlayer)
@@ -1987,7 +1980,7 @@ namespace Persuasion.EditorTools
             t.fontSize = TYPE_BODY + 2;
             t.color = TXT_PRIMARY;
             t.alignment = TextAlignmentOptions.Center;
-            t.enableWordWrapping = true;
+            t.textWrappingMode = TMPro.TextWrappingModes.Normal;
             t.overflowMode = TextOverflowModes.Overflow;
             t.raycastTarget = false;
 

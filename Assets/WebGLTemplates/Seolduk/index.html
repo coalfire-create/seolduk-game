@@ -6,9 +6,10 @@
     <title>{{{ PRODUCT_NAME }}}</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
-  <!-- KEYBOARD-FIX: 게임 입력 중이 아닐 때만 스페이스/방향키 등 스크롤 유발 키를 막는다 -->
+  <!-- KEYBOARD-FIX -->
     <script>
       (function() {
+        // ── 1. Block Space/Backspace/Arrow/Tab from reaching Unity when overlay is hidden ──
         var BLOCK = ['Space','Backspace','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'];
         function onKey(e) {
           var el = document.activeElement;
@@ -19,6 +20,35 @@
         }
         window.addEventListener('keydown', onKey, true);
         window.addEventListener('keyup',   onKey, true);
+
+        // ── 2. Prevent Unity from calling e.preventDefault() during Korean IME composition.
+        //    Unity's window-level capture handler may call preventDefault() on keydown events,
+        //    which cancels IME composition on Windows Chrome/Edge. We patch it out during composition.
+        var _origPD = Event.prototype.preventDefault;
+        Event.prototype.preventDefault = function() {
+          if (window._korComposing &&
+              (this.type === 'keydown' || this.type === 'keyup' || this.type === 'keypress') &&
+              this.target && this.target.id === 'kor-ime') {
+            return; // Do NOT cancel IME composition keystrokes
+          }
+          return _origPD.call(this);
+        };
+
+        // ── 3. Redirect canvas focus → textarea when overlay is active.
+        //    Registered in capture phase BEFORE Unity loads, so it fires first.
+        //    This catches Unity internally calling canvas.focus() mid-frame.
+        document.addEventListener('focus', function(e) {
+          if (!window._korOverlayActive) return;
+          var el = e.target;
+          if (!el) return;
+          var tag = el.tagName;
+          if (tag === 'CANVAS' || el.id === 'unity-canvas') {
+            e.stopPropagation();
+            el.blur();
+            var ta = document.getElementById('kor-ime');
+            if (ta) ta.focus();
+          }
+        }, true); // capture phase
       })();
 
       // AUDIO-FIX: 최초 사용자 입력 시 WebAudio 컨텍스트를 resume (모바일/사파리 자동재생 차단 대응)

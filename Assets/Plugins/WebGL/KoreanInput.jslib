@@ -1,6 +1,3 @@
-// Korean IME input bridge for Unity WebGL
-// Positions a styled HTML textarea exactly over the Unity input field.
-// Handles IME composition events (required for Windows Korean input).
 mergeInto(LibraryManager.library, {
 
     KorIme_Init: function(goNamePtr, onTextPtr, onSubmitPtr) {
@@ -10,18 +7,20 @@ mergeInto(LibraryManager.library, {
 
         if (document.getElementById('kor-ime-wrap')) return;
 
-        // Placeholder style
         var style = document.createElement('style');
-        style.textContent = '#kor-ime::placeholder{color:rgba(179,186,204,0.70);}#kor-ime{scrollbar-width:none;}#kor-ime::-webkit-scrollbar{display:none;}';
+        style.textContent = [
+            '#kor-ime::placeholder{color:rgba(179,186,204,0.70);}',
+            '#kor-ime{scrollbar-width:none;}',
+            '#kor-ime::-webkit-scrollbar{display:none;}',
+        ].join('');
         document.head.appendChild(style);
 
-        // Transparent wrapper (clicks pass through to Unity canvas)
+        // Transparent wrapper — clicks pass through to Unity canvas
         var wrap = document.createElement('div');
         wrap.id = 'kor-ime-wrap';
         wrap.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;display:none;';
         document.body.appendChild(wrap);
 
-        // The actual textarea
         var ta = document.createElement('textarea');
         ta.id = 'kor-ime';
         ta.setAttribute('lang', 'ko');
@@ -50,80 +49,113 @@ mergeInto(LibraryManager.library, {
             return document.querySelector('#unity-canvas') || document.querySelector('canvas');
         }
 
-        // Recalculate position to match Unity input field layout (1920x1080 reference).
-        // InputContainer: anchors (0,0)-(1,0), sizeDelta=(-120,64), pos=(0,20)
-        // InputField:     offsetMin=(16,6), offsetMax=(-160,-6)  → text area only (excl. send btn)
+        // Match Unity input field layout (1920×1080 reference).
         function updateLayout() {
             var canvas = getCanvas();
             if (!canvas) return;
             var r = canvas.getBoundingClientRect();
             var s = r.height / 1080;
-            var left   = r.left  + 76  * s;          // 60(margin) + 16(field inset)
-            var width  = r.width - 296 * s;           // excl. 76 left + 220 right (container margin + field offsetMax + gap)
-            var height = 52 * s;                      // 64 - 6*2 inner padding
-            var bottom = window.innerHeight - r.bottom + 26 * s; // 20(container) + 6(field inset)
-            var fs     = Math.round(22 * s);
-            ta.style.left      = left + 'px';
-            ta.style.width     = width + 'px';
-            ta.style.height    = height + 'px';
-            ta.style.bottom    = bottom + 'px';
-            ta.style.fontSize  = fs + 'px';
-            ta.style.lineHeight = height + 'px';
-            ta.style.padding   = '0 ' + Math.round(18 * s) + 'px';
+            ta.style.left       = (r.left  + 76  * s) + 'px';
+            ta.style.width      = (r.width - 296 * s) + 'px';
+            ta.style.height     = (52 * s) + 'px';
+            ta.style.bottom     = (window.innerHeight - r.bottom + 26 * s) + 'px';
+            ta.style.fontSize   = Math.round(22 * s) + 'px';
+            ta.style.lineHeight = (52 * s) + 'px';
+            ta.style.padding    = '0 ' + Math.round(18 * s) + 'px';
             ta.style.fontFamily = "'Pretendard','맑은 고딕','Apple SD Gothic Neo',sans-serif";
         }
 
         var composing = false;
+        var lastVal   = '';
 
-        ta.addEventListener('compositionstart', function() { composing = true; });
-        ta.addEventListener('compositionend',   function() {
+        // Deduplicated send: only sends when value actually changed.
+        function trySend() {
+            var v = ta.value;
+            if (v !== lastVal) {
+                lastVal = v;
+                SendMessage(goName, onText, v);
+            }
+        }
+
+        // ── Composition events (Korean IME) ──────────────────────────────
+        ta.addEventListener('compositionstart', function(e) {
+            composing = true;
+            window._korComposing = true;
+            e.stopPropagation();
+        });
+        ta.addEventListener('compositionupdate', function(e) {
+            e.stopPropagation();
+        });
+        ta.addEventListener('compositionend', function(e) {
             composing = false;
-            SendMessage(goName, onText, ta.value);
+            window._korComposing = false;
+            e.stopPropagation();
+            // Chrome fires 'input' AFTER compositionend with the final value.
+            // Schedule trySend via setTimeout so the 'input' handler fires first;
+            // if 'input' already sent the final value, lastVal dedup suppresses the duplicate.
+            setTimeout(function() { trySend(); }, 0);
         });
-        ta.addEventListener('input', function() {
-            if (!composing) SendMessage(goName, onText, ta.value);
+
+        // ── Input event (English typing + post-composition sync) ─────────
+        ta.addEventListener('input', function(e) {
+            e.stopPropagation();
+            if (!composing) trySend();
         });
+
+        // ── Keyboard events: stop propagation to prevent Unity interference ──
         ta.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            e.stopPropagation();
+            if (e.key === 'Enter' && !e.shiftKey && !composing) {
                 e.preventDefault();
                 var val = ta.value;
                 ta.value = '';
+                lastVal  = '';
                 SendMessage(goName, onSubmit, val);
             }
         });
+        ta.addEventListener('keyup',   function(e) { e.stopPropagation(); });
+        ta.addEventListener('keypress', function(e) { e.stopPropagation(); });
 
-        // Auto-refocus when the overlay is clicked away (user clicked on chat area etc.)
+        // ── Blur guard: immediately refocus when overlay is visible ───────
         ta.addEventListener('blur', function() {
             if (!wrap || wrap.style.display === 'none') return;
-            window._korRefocusTimer = setTimeout(function() {
-                if (wrap && wrap.style.display !== 'none' && ta) ta.focus();
-            }, 120);
+            requestAnimationFrame(function() {
+                if (wrap && wrap.style.display !== 'none') ta.focus();
+            });
         });
 
         window.addEventListener('resize', updateLayout);
+        window.addEventListener('orientationchange', updateLayout);
         updateLayout();
 
-        window._korIme      = ta;
-        window._korImeWrap  = wrap;
+        window._korIme       = ta;
+        window._korImeWrap   = wrap;
         window._korImeLayout = updateLayout;
+        window._korComposing = false;
+        window._korOverlayActive = false;
     },
 
     KorIme_Show: function() {
         if (!window._korImeWrap) return;
+        window._korOverlayActive = true;
         if (window._korImeLayout) window._korImeLayout();
         window._korImeWrap.style.display = 'block';
-        if (document.activeElement !== window._korIme) {
-            setTimeout(function() {
-                if (window._korIme) window._korIme.focus();
-            }, 40);
-        }
+        var ta = window._korIme;
+        if (!ta) return;
+        // Blur canvas immediately so it cannot intercept keyboard events.
+        var canvas = document.querySelector('#unity-canvas') || document.querySelector('canvas');
+        if (canvas) canvas.blur();
+        // Focus textarea without delay (40 ms delay was the root cause on Windows).
+        ta.focus();
     },
 
     KorIme_Hide: function() {
-        if (window._korRefocusTimer) { clearTimeout(window._korRefocusTimer); window._korRefocusTimer = null; }
+        window._korOverlayActive = false;
+        window._korComposing     = false;
         if (!window._korImeWrap) return;
         window._korImeWrap.style.display = 'none';
-        if (window._korIme) { window._korIme.blur(); window._korIme.value = ''; }
+        var ta = window._korIme;
+        if (ta) { ta.blur(); ta.value = ''; }
     },
 
     KorIme_Clear: function() {

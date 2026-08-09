@@ -33,6 +33,7 @@ namespace Persuasion.EditorTools
             WriteHeaders(outputPath);
             InjectGA4(outputPath);
             InjectKeyboardFix(outputPath);
+            InjectWindowUnityInstance(outputPath);
             CopyPrivacyHtml(outputPath);
 
             Debug.Log("[PostBuild] 후처리 완료.");
@@ -95,7 +96,7 @@ $@"<!-- GA4 -->
             Debug.Log($"[PostBuild] GA4 삽입 완료 (ID: {GA4_MEASUREMENT_ID})");
         }
 
-        // ── 3) 키보드 픽스 (스페이스바·백스페이스 브라우저 가로채기 방지) ────
+        // ── 3) 키보드 픽스 + 한글 IME 보호 ────────────────────────────────
         private static void InjectKeyboardFix(string buildPath)
         {
             string indexPath = Path.Combine(buildPath, "index.html");
@@ -108,6 +109,7 @@ $@"<!-- GA4 -->
             const string fix = @"<!-- KEYBOARD-FIX -->
     <script>
       (function() {
+        // 1. Block Space/Backspace/Arrow/Tab from reaching Unity when overlay is hidden
         var BLOCK = ['Space','Backspace','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'];
         function onKey(e) {
           var el = document.activeElement;
@@ -118,27 +120,73 @@ $@"<!-- GA4 -->
         }
         window.addEventListener('keydown', onKey, true);
         window.addEventListener('keyup',   onKey, true);
-      })();
 
-      // AUDIO-FIX
-      (function() {
-        function resumeCtx(ctx) { try { if (ctx && ctx.state === 'suspended') ctx.resume(); } catch (e) {} }
-        function unlockAudio() {
-          var ui = window.unityInstance, m = ui && ui.Module;
-          if (m) { resumeCtx(m.ctx); if (m.WEBAudio) resumeCtx(m.WEBAudio.audioContext); }
-        }
-        ['pointerdown','click','keydown','touchstart'].forEach(function(evt) {
-          document.addEventListener(evt, unlockAudio, true);
-        });
+        // 2. Prevent Unity from calling e.preventDefault() during Korean IME composition.
+        //    Unity's window-level capture handler may call preventDefault() on keydown events,
+        //    which cancels IME composition on Windows Chrome/Edge.
+        var _origPD = Event.prototype.preventDefault;
+        Event.prototype.preventDefault = function() {
+          if (window._korComposing &&
+              (this.type === 'keydown' || this.type === 'keyup' || this.type === 'keypress') &&
+              this.target && this.target.id === 'kor-ime') {
+            return;
+          }
+          return _origPD.call(this);
+        };
+
+        // 3. Redirect canvas focus to textarea when Korean overlay is active.
+        //    Registered before Unity loads (capture phase) so it fires first.
+        document.addEventListener('focus', function(e) {
+          if (!window._korOverlayActive) return;
+          var el = e.target;
+          if (!el) return;
+          if (el.tagName === 'CANVAS' || el.id === 'unity-canvas') {
+            e.stopPropagation();
+            el.blur();
+            var ta = document.getElementById('kor-ime');
+            if (ta) ta.focus();
+          }
+        }, true);
+
+        // AUDIO-FIX: resume WebAudio context on first user interaction
+        (function() {
+          function resumeCtx(ctx) { try { if (ctx && ctx.state === 'suspended') ctx.resume(); } catch (e) {} }
+          function unlockAudio() {
+            var ui = window.unityInstance, m = ui && ui.Module;
+            if (m) { resumeCtx(m.ctx); if (m.WEBAudio) resumeCtx(m.WEBAudio.audioContext); }
+          }
+          ['pointerdown','click','keydown','touchstart'].forEach(function(evt) {
+            document.addEventListener(evt, unlockAudio, true);
+          });
+        })();
       })();
     </script>
     ";
             html = html.Replace("</head>", fix + "</head>");
             File.WriteAllText(indexPath, html);
-            Debug.Log("[PostBuild] 키보드 픽스 삽입 완료");
+            Debug.Log("[PostBuild] 키보드 픽스 + 한글 IME 보호 삽입 완료");
         }
 
-        // ── 4) privacy.html 복사 ────────────────────────────────────
+        // ── 4) window.unityInstance 글로벌 노출 (오디오 언락 스크립트가 참조) ──
+        private static void InjectWindowUnityInstance(string buildPath)
+        {
+            string indexPath = Path.Combine(buildPath, "index.html");
+            if (!File.Exists(indexPath)) return;
+
+            string html = File.ReadAllText(indexPath);
+            const string marker  = "window.unityInstance = unityInstance;";
+            if (html.Contains(marker)) return;
+
+            // createUnityInstance().then((unityInstance) => { 다음 줄에 삽입
+            const string anchor  = "}).then((unityInstance) => {";
+            const string inject  = "}).then((unityInstance) => {\n                window.unityInstance = unityInstance;";
+            if (!html.Contains(anchor)) { Debug.LogWarning("[PostBuild] then 블록을 찾지 못해 window.unityInstance 삽입 생략"); return; }
+            html = html.Replace(anchor, inject);
+            File.WriteAllText(indexPath, html);
+            Debug.Log("[PostBuild] window.unityInstance 삽입 완료");
+        }
+
+        // ── 5) privacy.html 복사 ────────────────────────────────────
         private static void CopyPrivacyHtml(string buildPath)
         {
             // 소스: Assets/WebGL/privacy.html (빌드 삭제에 영향받지 않는 위치)
