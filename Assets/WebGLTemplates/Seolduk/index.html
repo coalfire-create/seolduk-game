@@ -161,8 +161,11 @@
         document.querySelector("#unity-container").className = "unity-mobile";
         canvas.className = "unity-mobile";
       } else {
-        canvas.style.width = "{{{ WIDTH }}}px";
-        canvas.style.height = "{{{ HEIGHT }}}px";
+        // itch.io 임베드(1280x720, 16:9)를 꽉 채우도록 반응형 처리.
+        // 고정 {{{ WIDTH }}}x{{{ HEIGHT }}} 대신 .unity-mobile CSS(container fixed 100%,
+        // canvas 100%)를 재사용해 iframe 을 컨테이너째 채운다(여백/종횡비 어긋남 방지).
+        document.querySelector("#unity-container").className = "unity-mobile";
+        canvas.className = "unity-mobile";
       }
 
       document.querySelector("#unity-loading-bar").style.display = "block";
